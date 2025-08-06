@@ -85,6 +85,37 @@ Configure the MCP server in Cursor's MCP settings:
 - Server name: ed-fi-data-standard
 - Command: `npx ed-fi-data-standard-mcp-server`
 
+### GitHub Copilot
+
+#### VS Code
+
+1. Ensure you have the GitHub Copilot and GitHub Copilot Chat extensions installed
+2. Create or update your VS Code settings file (`.vscode/settings.json` in your workspace or global settings):
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "ed-fi-data-standard": {
+      "command": "npx",
+      "args": ["ed-fi-data-standard-mcp-server"],
+      "env": {}
+    }
+  }
+}
+```
+
+3. Restart VS Code and use `@ed-fi-data-standard` in GitHub Copilot Chat to access Ed-Fi Data Standard tools
+
+#### Visual Studio
+
+1. Ensure you have the GitHub Copilot extension installed
+2. Open Tools → Options → GitHub Copilot → MCP Servers
+3. Add a new server configuration:
+   - Name: `ed-fi-data-standard`
+   - Command: `npx`
+   - Arguments: `ed-fi-data-standard-mcp-server`
+4. Restart Visual Studio and use the Ed-Fi tools in GitHub Copilot Chat
+
 ### Custom Installation
 
 If you've installed the package globally or locally, you can also use:
