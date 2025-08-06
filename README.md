@@ -12,30 +12,18 @@ An MCP Server for the Ed-Fi Data Standard that helps developers build client app
 - **Schema Exploration**: Browse and understand data models and schemas
 - **Detailed Documentation**: Get comprehensive information about endpoints and data structures
 
-## Installation
+## Documents
 
-```bash
-npm install
-npm run build
-```
-
-## Usage
-
-### As an MCP Server
-
-The server implements the Model Context Protocol (MCP) and can be used with AI assistants that support MCP.
-
-```bash
-npm start
-```
-
-### Development
-
-```bash
-npm run dev
-```
+- [Local Usage](./docs/local-usage.md)
+- [Requirements](./docs/requirements/)
 
 ## AI Assistant Integration
+
+> [!WARNING]
+> These installation instructions are not ready for usage yet.
+>
+> 1. Written by Copilot and not verified, other than the VS Code instructions.
+> 2. They will only work once `ed-fi-data-standard-mcp-server` has been published to npmjs.com.
 
 This MCP server can be integrated with popular AI coding assistants to provide Ed-Fi Data Standard context during development.
 
@@ -82,6 +70,7 @@ Add the following to your Continue configuration:
 ### Cursor
 
 Configure the MCP server in Cursor's MCP settings:
+
 - Server name: ed-fi-data-standard
 - Command: `npx ed-fi-data-standard-mcp-server`
 
@@ -90,31 +79,29 @@ Configure the MCP server in Cursor's MCP settings:
 #### VS Code
 
 1. Ensure you have the GitHub Copilot and GitHub Copilot Chat extensions installed
-2. Create or update your VS Code settings file (`.vscode/settings.json` in your workspace or global settings):
+2. Create or update your VS Code settings file (`.vscode/mcp.json` in your workspace or global settings):
 
-```json
-{
-  "github.copilot.chat.mcp.servers": {
-    "ed-fi-data-standard": {
-      "command": "npx",
-      "args": ["ed-fi-data-standard-mcp-server"],
-      "env": {}
+    ```json
+    {
+     "servers": {
+      "ed-fi-data-standard-mcp-server": {
+       "type": "stdio",
+       "command": "npx",
+       "args": [
+        "ed-fi-data-standard-mcp-server"
+       ]
+      }
+     },
+     "inputs": []
     }
-  }
-}
-```
+    ```
 
 3. Restart VS Code and use `@ed-fi-data-standard` in GitHub Copilot Chat to access Ed-Fi Data Standard tools
 
 #### Visual Studio
 
 1. Ensure you have the GitHub Copilot extension installed
-2. Open Tools → Options → GitHub Copilot → MCP Servers
-3. Add a new server configuration:
-   - Name: `ed-fi-data-standard`
-   - Command: `npx`
-   - Arguments: `ed-fi-data-standard-mcp-server`
-4. Restart Visual Studio and use the Ed-Fi tools in GitHub Copilot Chat
+2. See instructions in [Use MCP servers](https://learn.microsoft.com/en-us/visualstudio/ide/mcp-servers?view=vs-2022).
 
 ### Custom Installation
 
@@ -133,44 +120,57 @@ ed-fi-mcp-server
 The MCP server provides the following tools:
 
 ### 1. `list_available_versions`
+
 Lists all supported Ed-Fi Data Standard versions and their corresponding OpenAPI specification URLs.
 
 ### 2. `set_data_standard_version`
+
 Loads the OpenAPI specification for a specific Ed-Fi Data Standard version.
 
 **Parameters:**
+
 - `version` (required): One of "4.0", "5.0", "5.1", or "5.2"
 
 ### 3. `set_custom_data_standard_url`
+
 Loads the OpenAPI specification from a custom URL (e.g., for custom Ed-Fi implementations).
 
 **Parameters:**
+
 - `url` (required): The URL to the custom OpenAPI specification
 - `name` (required): A descriptive name for this custom data standard
 
 ### 4. `search_endpoints`
+
 Searches for API endpoints that match a query term.
 
 **Parameters:**
+
 - `query` (required): Search term (e.g., "student", "school", "assessment")
 
 ### 5. `get_endpoint_details`
+
 Gets detailed information about a specific API endpoint.
 
 **Parameters:**
+
 - `path` (required): The API endpoint path (e.g., "/ed-fi/students")
 - `method` (optional): HTTP method (default: "GET")
 
 ### 6. `search_schemas`
+
 Searches for data models/schemas that match a query term.
 
 **Parameters:**
+
 - `query` (required): Search term (e.g., "Student", "School", "Assessment")
 
 ### 7. `get_schema_details`
+
 Gets detailed information about a specific data model/schema.
 
 **Parameters:**
+
 - `schemaName` (required): The name of the schema
 
 ## Configuration
@@ -204,10 +204,10 @@ ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 ED_FI_CACHE_DIR=/opt/cache/ed-fi
 
 | Version | OpenAPI Specification URL |
 |---------|---------------------------|
-| 4.0 | https://api.ed-fi.org/v6.2/api/metadata/data/v3/resources/swagger.json |
-| 5.0 | https://api.ed-fi.org/v7.1/api/metadata/data/v3/resources/swagger.json |
-| 5.1 | https://api.ed-fi.org/v7.2/api/metadata/data/v3/resources/swagger.json |
-| 5.2 | https://api.ed-fi.org/v7.3/api/metadata/data/v3/resources/swagger.json |
+| 4.0 | <https://api.ed-fi.org/v6.2/api/metadata/data/v3/resources/swagger.json> |
+| 5.0 | <https://api.ed-fi.org/v7.1/api/metadata/data/v3/resources/swagger.json> |
+| 5.1 | <https://api.ed-fi.org/v7.2/api/metadata/data/v3/resources/swagger.json> |
+| 5.2 | <https://api.ed-fi.org/v7.3/api/metadata/data/v3/resources/swagger.json> |
 
 ## Example Workflow
 
@@ -231,16 +231,14 @@ ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 ED_FI_CACHE_DIR=/opt/cache/ed-fi
 
 If you're working with a custom Ed-Fi implementation, you can load specifications directly:
 
-```
 1. Use set_custom_data_standard_url with:
-   - url: "https://your-ed-fi.org/api/metadata/data/v3/resources/swagger.json"
-   - name: "My Custom Ed-Fi Instance"
+   - `url: "https://your-ed-fi.org/api/metadata/data/v3/resources/swagger.json"`
+   - `name: "My Custom Ed-Fi Instance"`
 
 2. Continue with normal workflow (search_endpoints, etc.)
-```
 
 ## License
 
 Copyright (c) 2025, Ed-Fi Alliance, LLC. All rights reserved.
 
-This project is licensed under the Apache License, Version 2.0 - see the LICENSE file for details.
+This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](./LICENSE) file for details.
