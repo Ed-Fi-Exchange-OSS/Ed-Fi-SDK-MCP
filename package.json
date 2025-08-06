@@ -12,9 +12,9 @@
   },
   "keywords": ["mcp", "ed-fi", "api", "data-standard"],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bin": {
-    "ed-fi-mcp-server": "dist/index.js"
+    "ed-fi-data-standard-mcp-server": "dist/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.1",
