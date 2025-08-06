@@ -9,10 +9,18 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 interface DataStandardVersion {
   version: string;
   url: string;
+}
+
+interface ServerConfig {
+  customBaseUrl?: string;
+  cacheDirectory?: string;
 }
 
 interface OpenAPISpec {
@@ -31,6 +39,8 @@ class EdFiMCPServer {
   private server: Server;
   private currentSpec: OpenAPISpec | null = null;
   private currentVersion: string | null = null;
+  private config: ServerConfig;
+  private cacheDir: string;
 
   private readonly dataStandardVersions: DataStandardVersion[] = [
     {
@@ -52,6 +62,15 @@ class EdFiMCPServer {
   ];
 
   constructor() {
+    // Load configuration from environment variables
+    this.config = {
+      customBaseUrl: process.env.ED_FI_CUSTOM_BASE_URL,
+      cacheDirectory: process.env.ED_FI_CACHE_DIR || path.join(os.tmpdir(), 'ed-fi-mcp-cache'),
+    };
+
+    this.cacheDir = this.config.cacheDirectory!;
+    this.ensureCacheDirectory();
+
     this.server = new Server(
       {
         name: "ed-fi-data-standard-mcp-server",
@@ -65,6 +84,45 @@ class EdFiMCPServer {
     );
 
     this.setupToolHandlers();
+  }
+
+  private ensureCacheDirectory(): void {
+    if (!fs.existsSync(this.cacheDir)) {
+      fs.mkdirSync(this.cacheDir, { recursive: true });
+    }
+  }
+
+  private getCacheFilePath(url: string): string {
+    // Create a safe filename from the URL
+    const filename = url.replace(/[^a-zA-Z0-9]/g, '_') + '.json';
+    return path.join(this.cacheDir, filename);
+  }
+
+  private async loadFromCache(url: string): Promise<OpenAPISpec | null> {
+    try {
+      const cacheFile = this.getCacheFilePath(url);
+      if (fs.existsSync(cacheFile)) {
+        const stats = fs.statSync(cacheFile);
+        const cacheAge = Date.now() - stats.mtime.getTime();
+        // Cache for 1 hour
+        if (cacheAge < 60 * 60 * 1000) {
+          const data = fs.readFileSync(cacheFile, 'utf8');
+          return JSON.parse(data);
+        }
+      }
+    } catch (error) {
+      // Ignore cache errors, will fetch fresh data
+    }
+    return null;
+  }
+
+  private async saveToCache(url: string, spec: OpenAPISpec): Promise<void> {
+    try {
+      const cacheFile = this.getCacheFilePath(url);
+      fs.writeFileSync(cacheFile, JSON.stringify(spec, null, 2));
+    } catch (error) {
+      // Ignore cache save errors
+    }
   }
 
   private setupToolHandlers(): void {
@@ -84,6 +142,24 @@ class EdFiMCPServer {
                 },
               },
               required: ["version"],
+            },
+          },
+          {
+            name: "set_custom_data_standard_url",
+            description: "Set a custom OpenAPI specification URL for the Ed-Fi Data Standard",
+            inputSchema: {
+              type: "object",
+              properties: {
+                url: {
+                  type: "string",
+                  description: "The URL to the custom OpenAPI specification",
+                },
+                name: {
+                  type: "string",
+                  description: "A descriptive name for this custom data standard",
+                },
+              },
+              required: ["url", "name"],
             },
           },
           {
@@ -168,6 +244,12 @@ class EdFiMCPServer {
         case "set_data_standard_version":
           return await this.setDataStandardVersion(request.params.arguments?.version as string);
 
+        case "set_custom_data_standard_url":
+          return await this.setCustomDataStandardUrl(
+            request.params.arguments?.url as string,
+            request.params.arguments?.name as string
+          );
+
         case "search_endpoints":
           return await this.searchEndpoints(request.params.arguments?.query as string);
 
@@ -190,19 +272,27 @@ class EdFiMCPServer {
   }
 
   private async listAvailableVersions() {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Available Ed-Fi Data Standard versions:
+    let versionsText = `Available Ed-Fi Data Standard versions:
 
 ${this.dataStandardVersions
   .map(
     (v) => `• Version ${v.version}: ${v.url}`
   )
-  .join("\n")}
+  .join("\n")}`;
 
-Use set_data_standard_version to select a version and load its OpenAPI specification.`,
+    if (this.config.customBaseUrl) {
+      versionsText += `\n\n📝 Custom base URL configured: ${this.config.customBaseUrl}
+You can use set_custom_data_standard_url to load specifications from your custom instance.`;
+    }
+
+    versionsText += `\n\nUse set_data_standard_version to select a version and load its OpenAPI specification.
+Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: versionsText,
         },
       ],
     };
@@ -220,10 +310,43 @@ Use set_data_standard_version to select a version and load its OpenAPI specifica
       );
     }
 
+    const url = this.config.customBaseUrl 
+      ? versionInfo.url.replace(/https:\/\/api\.ed-fi\.org\/[^\/]+/, this.config.customBaseUrl)
+      : versionInfo.url;
+
+    return await this.loadOpenAPISpec(url, `Ed-Fi Data Standard ${version}`);
+  }
+
+  private async setCustomDataStandardUrl(url: string, name: string) {
+    if (!url || !name) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        "Both URL and name are required for custom data standard"
+      );
+    }
+
+    return await this.loadOpenAPISpec(url, name);
+  }
+
+  private async loadOpenAPISpec(url: string, displayName: string) {
     try {
-      const response = await axios.get(versionInfo.url);
-      this.currentSpec = response.data;
-      this.currentVersion = version;
+      // Try to load from cache first
+      let spec = await this.loadFromCache(url);
+      let fromCache = true;
+
+      if (!spec) {
+        const response = await axios.get(url);
+        spec = response.data;
+        fromCache = false;
+        
+        // Save to cache for future use
+        if (spec) {
+          await this.saveToCache(url, spec);
+        }
+      }
+
+      this.currentSpec = spec;
+      this.currentVersion = displayName;
 
       const endpointCount = Object.keys(this.currentSpec?.paths || {}).length;
       const schemaCount = Object.keys(this.currentSpec?.components?.schemas || {}).length;
@@ -232,13 +355,14 @@ Use set_data_standard_version to select a version and load its OpenAPI specifica
         content: [
           {
             type: "text",
-            text: `✅ Successfully loaded Ed-Fi Data Standard version ${version}
+            text: `✅ Successfully loaded ${displayName}${fromCache ? ' (from cache)' : ''}
 
 📋 API Overview:
 • Title: ${this.currentSpec?.info?.title || "Ed-Fi API"}
 • Version: ${this.currentSpec?.info?.version || "Unknown"}
 • Endpoints: ${endpointCount}
 • Data Models: ${schemaCount}
+• Source: ${url}
 
 You can now:
 • Search for endpoints using search_endpoints
@@ -251,7 +375,7 @@ You can now:
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to load OpenAPI specification: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to load OpenAPI specification from ${url}: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
