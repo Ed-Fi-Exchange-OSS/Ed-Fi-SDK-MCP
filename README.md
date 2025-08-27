@@ -11,10 +11,15 @@ An MCP Server for the Ed-Fi Data Standard that helps developers build client app
 - **Endpoint Discovery**: Search and explore available API endpoints
 - **Schema Exploration**: Browse and understand data models and schemas
 - **Detailed Documentation**: Get comprehensive information about endpoints and data structures
+- **🆕 Schema Visualization**: Generate entity relationship diagrams in multiple formats (Mermaid, PlantUML, Graphviz)
+- **🆕 Interactive Entity Analysis**: Explore relationships between core entities (students, schools, assessments, etc.)
+- **🆕 Domain Filtering**: Filter diagrams by entity type or domain area
+- **🆕 Multiple Export Formats**: Export diagrams as text for use in various visualization tools
 
 ## Documents
 
 - [Local Usage](./docs/local-usage.md)
+- [Schema Visualization Guide](./docs/schema-visualization.md)
 - [Requirements](./docs/requirements/)
 
 ## AI Assistant Integration
@@ -173,6 +178,48 @@ Gets detailed information about a specific data model/schema.
 
 - `schemaName` (required): The name of the schema
 
+## 🎨 Schema Visualization Tools
+
+### 8. `generate_entity_diagram`
+
+Generate entity relationship diagrams from the OpenAPI specification.
+
+**Parameters:**
+
+- `format` (optional): Diagram format - "mermaid", "plantuml", or "graphviz" (default: "mermaid")
+- `includeProperties` (optional): Include entity properties in diagram (default: true)
+- `includeDescriptions` (optional): Include entity descriptions (default: false)
+- `filterDomains` (optional): Array of domain names to filter by (e.g., ["student", "school"])
+- `maxEntities` (optional): Maximum number of entities to include (default: 20)
+
+### 9. `list_entity_relationships`
+
+List relationships between entities in the current specification.
+
+**Parameters:**
+
+- `entityName` (optional): Show relationships for a specific entity only
+- `relationshipType` (optional): Filter by relationship type ("one-to-one", "one-to-many", "many-to-one", "many-to-many")
+
+### 10. `get_entities_by_domain`
+
+Get entities grouped by domain areas (Student, School, Staff, Assessment, etc.).
+
+**Parameters:**
+
+- `domain` (optional): Get entities for a specific domain only
+
+### 11. `export_diagram_as_text`
+
+Export a diagram as text that can be rendered by various visualization tools.
+
+**Parameters:**
+
+- `format` (required): Diagram format - "mermaid", "plantuml", or "graphviz"
+- `filename` (optional): Filename to save the diagram text
+- `filterDomains` (optional): Filter entities by domain areas
+- `maxEntities` (optional): Maximum number of entities to include (default: 15)
+
 ## Configuration
 
 The MCP server supports the following environment variables for configuration:
@@ -227,6 +274,15 @@ ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 ED_FI_CACHE_DIR=/opt/cache/ed-fi
 5. **Explore data models:**
    Use `search_schemas` and `get_schema_details` to understand the data structures.
 
+6. **🆕 Visualize entity relationships:**
+   Use `generate_entity_diagram` to create visual representations of the data model.
+
+7. **🆕 Analyze entity domains:**
+   Use `get_entities_by_domain` to understand how entities are organized by functional areas.
+
+8. **🆕 Export diagrams:**
+   Use `export_diagram_as_text` to save diagrams for documentation or further analysis.
+
 ### Custom Ed-Fi Instance Example
 
 If you're working with a custom Ed-Fi implementation, you can load specifications directly:
@@ -236,6 +292,51 @@ If you're working with a custom Ed-Fi implementation, you can load specification
    - `name: "My Custom Ed-Fi Instance"`
 
 2. Continue with normal workflow (search_endpoints, etc.)
+
+### Visualization Workflow Example
+
+For data architects working with Ed-Fi schemas:
+
+1. **Load the specification:**
+   ```
+   set_data_standard_version("5.2")
+   ```
+
+2. **Explore domain structure:**
+   ```
+   get_entities_by_domain()
+   ```
+
+3. **Generate a student-focused diagram:**
+   ```
+   generate_entity_diagram({
+     "format": "mermaid",
+     "filterDomains": ["student", "school"],
+     "maxEntities": 15
+   })
+   ```
+
+4. **Examine specific relationships:**
+   ```
+   list_entity_relationships({
+     "entityName": "edfi_student"
+   })
+   ```
+
+5. **Export for documentation:**
+   ```
+   export_diagram_as_text({
+     "format": "plantuml",
+     "filename": "student-entities.puml",
+     "filterDomains": ["student"]
+   })
+   ```
+
+The generated diagrams can be used in:
+- GitHub/GitLab documentation (Mermaid)
+- Technical documentation (PlantUML)
+- System architecture documents (Graphviz)
+- Presentation materials (exported as images)
 
 ## License
 

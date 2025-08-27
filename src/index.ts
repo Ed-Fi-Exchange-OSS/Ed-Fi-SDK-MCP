@@ -12,6 +12,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { DiagramGenerator } from "./diagram-generator.js";
 
 interface DataStandardVersion {
   version: string;
@@ -41,6 +42,7 @@ class EdFiMCPServer {
   private currentVersion: string | null = null;
   private config: ServerConfig;
   private cacheDir: string;
+  private diagramGenerator: DiagramGenerator;
 
   private readonly dataStandardVersions: DataStandardVersion[] = [
     {
@@ -69,6 +71,7 @@ class EdFiMCPServer {
     };
 
     this.cacheDir = this.config.cacheDirectory!;
+    this.diagramGenerator = new DiagramGenerator();
     this.ensureCacheDirectory();
 
     this.server = new Server(
@@ -232,6 +235,102 @@ class EdFiMCPServer {
               required: ["schemaName"],
             },
           },
+          {
+            name: "generate_entity_diagram",
+            description: "Generate entity relationship diagrams from the current OpenAPI specification",
+            inputSchema: {
+              type: "object",
+              properties: {
+                format: {
+                  type: "string",
+                  enum: ["mermaid", "plantuml", "graphviz"],
+                  description: "The diagram format to generate",
+                  default: "mermaid",
+                },
+                includeProperties: {
+                  type: "boolean",
+                  description: "Whether to include entity properties in the diagram",
+                  default: true,
+                },
+                includeDescriptions: {
+                  type: "boolean",
+                  description: "Whether to include entity descriptions",
+                  default: false,
+                },
+                filterDomains: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Filter entities by domain areas (e.g., 'student', 'school', 'assessment')",
+                },
+                maxEntities: {
+                  type: "number",
+                  description: "Maximum number of entities to include in the diagram",
+                  default: 20,
+                },
+              },
+            },
+          },
+          {
+            name: "list_entity_relationships",
+            description: "List relationships between entities in the current OpenAPI specification",
+            inputSchema: {
+              type: "object",
+              properties: {
+                entityName: {
+                  type: "string",
+                  description: "Optional: Show relationships for a specific entity only",
+                },
+                relationshipType: {
+                  type: "string",
+                  enum: ["one-to-one", "one-to-many", "many-to-one", "many-to-many"],
+                  description: "Optional: Filter by relationship type",
+                },
+              },
+            },
+          },
+          {
+            name: "get_entities_by_domain",
+            description: "Get entities grouped by domain areas (Student, School, Staff, etc.)",
+            inputSchema: {
+              type: "object",
+              properties: {
+                domain: {
+                  type: "string",
+                  description: "Optional: Get entities for a specific domain only",
+                },
+              },
+            },
+          },
+          {
+            name: "export_diagram_as_text",
+            description: "Export a diagram as text that can be rendered by various tools",
+            inputSchema: {
+              type: "object",
+              properties: {
+                format: {
+                  type: "string",
+                  enum: ["mermaid", "plantuml", "graphviz"],
+                  description: "The diagram format to export",
+                  default: "mermaid",
+                },
+                filename: {
+                  type: "string",
+                  description: "Optional: Filename to save the diagram text",
+                },
+                filterDomains: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Filter entities by domain areas",
+                },
+                maxEntities: {
+                  type: "number",
+                  description: "Maximum number of entities to include",
+                  default: 15,
+                },
+              },
+              required: ["format"],
+            },
+          },
         ],
       };
     });
@@ -264,6 +363,18 @@ class EdFiMCPServer {
 
         case "get_schema_details":
           return await this.getSchemaDetails(request.params.arguments?.schemaName as string);
+
+        case "generate_entity_diagram":
+          return await this.generateEntityDiagram(request.params.arguments);
+
+        case "list_entity_relationships":
+          return await this.listEntityRelationships(request.params.arguments);
+
+        case "get_entities_by_domain":
+          return await this.getEntitiesByDomain(request.params.arguments?.domain as string);
+
+        case "export_diagram_as_text":
+          return await this.exportDiagramAsText(request.params.arguments);
 
         default:
           throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
@@ -348,6 +459,10 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
       this.currentSpec = spec;
       this.currentVersion = displayName;
 
+      // Analyze the spec for entity relationships
+      this.diagramGenerator.analyzeOpenAPISpec(spec);
+      const stats = this.diagramGenerator.getStats();
+
       const endpointCount = Object.keys(this.currentSpec?.paths || {}).length;
       const schemaCount = Object.keys(this.currentSpec?.components?.schemas || {}).length;
 
@@ -364,11 +479,19 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
 • Data Models: ${schemaCount}
 • Source: ${url}
 
+📊 Entity Relationship Analysis:
+• Entities analyzed: ${stats.entityCount}
+• Relationships found: ${stats.relationshipCount}
+• Domain areas: ${Object.keys(stats.domains).join(', ')}
+
 You can now:
 • Search for endpoints using search_endpoints
 • Get endpoint details using get_endpoint_details  
 • Search for data models using search_schemas
-• Get schema details using get_schema_details`,
+• Get schema details using get_schema_details
+• Generate entity diagrams using generate_entity_diagram
+• List entity relationships using list_entity_relationships
+• Get entities by domain using get_entities_by_domain`,
           },
         ],
       };
@@ -656,6 +779,275 @@ Use get_schema_details with a specific schema name to get more information.`;
         },
       ],
     };
+  }
+
+  private async generateEntityDiagram(args: any) {
+    if (!this.currentSpec) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        "No Data Standard version loaded. Use set_data_standard_version first."
+      );
+    }
+
+    const options = {
+      format: args?.format || 'mermaid',
+      includeProperties: args?.includeProperties !== false,
+      includeDescriptions: args?.includeDescriptions || false,
+      filterDomains: args?.filterDomains || [],
+      maxEntities: args?.maxEntities || 20
+    };
+
+    try {
+      const diagramText = this.diagramGenerator.generateDiagram(options);
+      const stats = this.diagramGenerator.getStats();
+
+      let responseText = `# Entity Relationship Diagram (${options.format.toUpperCase()})
+
+Generated from **${this.currentVersion}**
+
+## Statistics:
+• Total entities: ${stats.entityCount}
+• Total relationships: ${stats.relationshipCount}
+• Entities in diagram: ${options.maxEntities}
+• Format: ${options.format}
+${options.filterDomains.length > 0 ? `• Filtered domains: ${options.filterDomains.join(', ')}` : ''}
+
+## Diagram:
+
+\`\`\`${options.format}
+${diagramText}
+\`\`\`
+
+## Usage Notes:
+- Copy the diagram code above and paste it into a ${options.format} viewer
+- For Mermaid: Use GitHub, GitLab, or Mermaid Live Editor
+- For PlantUML: Use PlantUML online editor or IDE plugins
+- For Graphviz: Use Graphviz online or local installation
+
+Use export_diagram_as_text to save this diagram to a file.`;
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: responseText,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to generate diagram: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  private async listEntityRelationships(args: any) {
+    if (!this.currentSpec) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        "No Data Standard version loaded. Use set_data_standard_version first."
+      );
+    }
+
+    const entityName = args?.entityName;
+    const relationshipType = args?.relationshipType;
+
+    // Get all relationships using the relationships array directly
+    let relationships = this.diagramGenerator['relationships'] || [];
+    
+    // Filter by entity if specified
+    if (entityName) {
+      relationships = relationships.filter(rel => 
+        rel.fromEntity === entityName || rel.toEntity === entityName
+      );
+    }
+
+    // Filter by relationship type if specified
+    if (relationshipType) {
+      relationships = relationships.filter(rel => rel.type === relationshipType);
+    }
+
+    if (relationships.length === 0) {
+      const filterInfo = entityName ? ` for entity "${entityName}"` : '';
+      const typeInfo = relationshipType ? ` of type "${relationshipType}"` : '';
+      return {
+        content: [
+          {
+            type: "text",
+            text: `No relationships found${filterInfo}${typeInfo}.`,
+          },
+        ],
+      };
+    }
+
+    const relationshipText = relationships
+      .slice(0, 50) // Limit to prevent overwhelming output
+      .map(rel => {
+        const arrow = rel.type === 'one-to-many' ? '→○' : 
+                     rel.type === 'many-to-one' ? '○→' :
+                     rel.type === 'many-to-many' ? '○→○' : '→';
+        return `• **${rel.fromEntity}** ${arrow} **${rel.toEntity}** (${rel.property})
+  Type: ${rel.type}${rel.description ? `
+  Description: ${rel.description}` : ''}`;
+      })
+      .join('\n\n');
+
+    const resultText = `# Entity Relationships ${entityName ? `for ${entityName}` : ''}
+
+Found ${relationships.length} relationship(s)${relationshipType ? ` of type "${relationshipType}"` : ''}:
+
+${relationshipText}
+
+${relationships.length > 50 ? '\n... and more. Use more specific filters to see additional relationships.' : ''}
+
+## Legend:
+• → : one-to-one
+• →○ : one-to-many  
+• ○→ : many-to-one
+• ○→○ : many-to-many`;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: resultText,
+        },
+      ],
+    };
+  }
+
+  private async getEntitiesByDomain(domain?: string) {
+    if (!this.currentSpec) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        "No Data Standard version loaded. Use set_data_standard_version first."
+      );
+    }
+
+    const entitiesByDomain = this.diagramGenerator.getEntitiesByDomain();
+
+    if (domain) {
+      const domainEntities = entitiesByDomain[domain];
+      if (!domainEntities) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Domain "${domain}" not found. Available domains: ${Object.keys(entitiesByDomain).join(', ')}`,
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `# ${domain} Domain Entities
+
+Found ${domainEntities.length} entities in the ${domain} domain:
+
+${domainEntities.map(entity => `• ${entity}`).join('\n')}
+
+Use get_schema_details to get more information about any entity.`,
+          },
+        ],
+      };
+    }
+
+    // Return all domains
+    let resultText = '# Entities by Domain\n\n';
+    for (const [domainName, entities] of Object.entries(entitiesByDomain)) {
+      resultText += `## ${domainName} (${entities.length} entities)\n`;
+      resultText += entities.slice(0, 10).map(entity => `• ${entity}`).join('\n');
+      if (entities.length > 10) {
+        resultText += `\n... and ${entities.length - 10} more`;
+      }
+      resultText += '\n\n';
+    }
+
+    resultText += 'Use get_entities_by_domain with a specific domain name to see all entities in that domain.';
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: resultText,
+        },
+      ],
+    };
+  }
+
+  private async exportDiagramAsText(args: any) {
+    if (!this.currentSpec) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        "No Data Standard version loaded. Use set_data_standard_version first."
+      );
+    }
+
+    const format = args?.format || 'mermaid';
+    const filename = args?.filename;
+    const filterDomains = args?.filterDomains || [];
+    const maxEntities = args?.maxEntities || 15;
+
+    const options = {
+      format,
+      includeProperties: true,
+      includeDescriptions: false,
+      filterDomains,
+      maxEntities
+    };
+
+    try {
+      const diagramText = this.diagramGenerator.generateDiagram(options);
+      
+      let exportPath = '';
+      if (filename) {
+        exportPath = path.join(this.cacheDir, filename);
+        fs.writeFileSync(exportPath, diagramText);
+      }
+
+      const stats = this.diagramGenerator.getStats();
+
+      let responseText = `# Diagram Export (${format.toUpperCase()})
+
+**Generated from:** ${this.currentVersion}
+**Entities included:** ${Math.min(maxEntities, stats.entityCount)}
+**Format:** ${format}
+${filterDomains.length > 0 ? `**Filtered domains:** ${filterDomains.join(', ')}` : ''}
+${filename ? `**Saved to:** ${exportPath}` : ''}
+
+## Diagram Text:
+
+\`\`\`${format}
+${diagramText}
+\`\`\`
+
+## Instructions:
+1. Copy the diagram text above
+2. Paste into your preferred ${format} viewer:
+   - **Mermaid**: GitHub/GitLab markdown, Mermaid Live Editor, VS Code with Mermaid extension
+   - **PlantUML**: PlantUML online server, IDE plugins
+   - **Graphviz**: Graphviz online, local dot command
+
+${filename ? `The diagram has been saved to ${exportPath} for your convenience.` : 'Use the filename parameter to save this diagram to a file.'}`;
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: responseText,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to export diagram: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
   }
 
   async run(): Promise<void> {
