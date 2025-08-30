@@ -76,8 +76,8 @@ class EdFiMCPServer {
 
     this.server = new Server(
       {
-        name: "ed-fi-data-standard-mcp-server",
-        version: "1.0.0",
+        name: "ed-fi-sdk",
+        version: "0.1.0",
       },
       {
         capabilities: {
