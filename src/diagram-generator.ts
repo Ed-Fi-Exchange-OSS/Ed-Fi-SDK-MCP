@@ -2,6 +2,13 @@
  * Diagram generator for Ed-Fi Data Standard entity relationships
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 interface EntityProperty {
   name: string;
   type: string;
@@ -331,33 +338,66 @@ export class DiagramGenerator {
   /**
    * Get entities grouped by domain/category
    */
-  getEntitiesByDomain(): Record<string, string[]> {
-    const domains: Record<string, string[]> = {
-      'Student': [],
-      'School': [],
-      'Staff': [],
-      'Assessment': [],
-      'Course': [],
-      'Grade': [],
-      'Attendance': [],
-      'Other': []
-    };
+  getEntitiesByDomain(version: string): Record<string, string[]> {
+    // Validate that domain information exists for this version
+    // Look for domain files in the src/domains directory relative to the project root
+    const projectRoot = path.resolve(__dirname, '..');
+    const domainFilePath = path.join(projectRoot, 'src', 'domains', `${version}.json`);
+    
+    if (!fs.existsSync(domainFilePath)) {
+      throw new Error(`Domain information is not available for this version.`);
+    }
 
-    for (const entityName of this.entities.keys()) {
-      const name = entityName.toLowerCase();
-      let categorized = false;
+    // Read and parse the domain file
+    const domainFileContent = fs.readFileSync(domainFilePath, 'utf-8');
+    const domainData = JSON.parse(domainFileContent);
 
-      for (const [domain, entities] of Object.entries(domains)) {
-        if (domain !== 'Other' && name.includes(domain.toLowerCase())) {
-          entities.push(entityName);
-          categorized = true;
-          break;
+    // Extract all entities from the domain data and group them by domain
+    const domains: Record<string, string[]> = {};
+
+    for (const domainObj of domainData) {
+      for (const [domainName, domainInfo] of Object.entries(domainObj)) {
+        const info = domainInfo as any;
+        
+        // Initialize domain if not exists
+        if (!domains[domainName]) {
+          domains[domainName] = [];
+        }
+
+        // Add entities from this domain
+        if (info.entities && Array.isArray(info.entities)) {
+          for (const entity of info.entities) {
+            // Only add entities that actually exist in our analyzed entities
+            if (this.entities.has(entity) && !domains[domainName].includes(entity)) {
+              domains[domainName].push(entity);
+            }
+          }
+        }
+
+        // Add associations from this domain (they are also entities)
+        if (info.associations && Array.isArray(info.associations)) {
+          for (const association of info.associations) {
+            // Only add associations that actually exist in our analyzed entities
+            if (this.entities.has(association) && !domains[domainName].includes(association)) {
+              domains[domainName].push(association);
+            }
+          }
         }
       }
+    }
 
-      if (!categorized) {
-        domains.Other.push(entityName);
-      }
+    // Add any remaining entities that weren't categorized to "Other"
+    const categorizedEntities = new Set<string>();
+    for (const entities of Object.values(domains)) {
+      entities.forEach(entity => categorizedEntities.add(entity));
+    }
+
+    const uncategorizedEntities = Array.from(this.entities.keys()).filter(
+      entity => !categorizedEntities.has(entity)
+    );
+
+    if (uncategorizedEntities.length > 0) {
+      domains['Other'] = uncategorizedEntities;
     }
 
     // Remove empty domains
@@ -373,8 +413,8 @@ export class DiagramGenerator {
   /**
    * Get summary statistics
    */
-  getStats(): { entityCount: number; relationshipCount: number; domains: Record<string, number> } {
-    const domains = this.getEntitiesByDomain();
+  getStats(version: string): { entityCount: number; relationshipCount: number; domains: Record<string, number> } {
+    const domains = this.getEntitiesByDomain(version);
     const domainCounts: Record<string, number> = {};
     
     for (const [domain, entities] of Object.entries(domains)) {

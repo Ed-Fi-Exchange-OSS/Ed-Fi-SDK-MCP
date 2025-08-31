@@ -42,6 +42,7 @@ class EdFiMCPServer {
   private server: Server;
   private currentSpec: OpenAPISpec | null = null;
   private currentVersion: string | null = null;
+  private currentVersionNumber: string | null = null;
   private config: ServerConfig;
   private cacheDir: string;
   private diagramGenerator: DiagramGenerator;
@@ -1118,6 +1119,7 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
       ? versionInfo.url.replace(/https:\/\/api\.example\.org\/[^\/]+/, this.config.customBaseUrl)
       : versionInfo.url;
 
+    this.currentVersionNumber = version;
     return await this.loadOpenAPISpec(url, `Ed-Fi Data Standard ${version}`);
   }
 
@@ -1129,6 +1131,7 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
       );
     }
 
+    this.currentVersionNumber = null; // Custom URLs don't have a defined version
     return await this.loadOpenAPISpec(url, name);
   }
 
@@ -1154,7 +1157,12 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
 
       // Analyze the spec for entity relationships
       this.diagramGenerator.analyzeOpenAPISpec(spec);
-      const stats = this.diagramGenerator.getStats();
+      
+      // Only generate stats if we have a version number (domain info is available)
+      let stats = null;
+      if (this.currentVersionNumber) {
+        stats = this.diagramGenerator.getStats(this.currentVersionNumber);
+      }
 
       const endpointCount = Object.keys(this.currentSpec?.paths || {}).length;
       const schemaCount = Object.keys(this.currentSpec?.components?.schemas || {}).length;
@@ -1173,9 +1181,9 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
 • Source: ${url}
 
 📊 Entity Relationship Analysis:
-• Entities analyzed: ${stats.entityCount}
+${stats ? `• Entities analyzed: ${stats.entityCount}
 • Relationships found: ${stats.relationshipCount}
-• Domain areas: ${Object.keys(stats.domains).join(', ')}
+• Domain areas: ${Object.keys(stats.domains).join(', ')}` : '• Domain information not available for this version'}
 
 You can now:
 • Search for endpoints using search_endpoints
@@ -1492,15 +1500,19 @@ Use get_schema_details with a specific schema name to get more information.`;
 
     try {
       const diagramText = this.diagramGenerator.generateDiagram(options);
-      const stats = this.diagramGenerator.getStats();
+      
+      let stats = null;
+      if (this.currentVersionNumber) {
+        stats = this.diagramGenerator.getStats(this.currentVersionNumber);
+      }
 
       let responseText = `# Entity Relationship Diagram (${options.format.toUpperCase()})
 
 Generated from **${this.currentVersion}**
 
 ## Statistics:
-• Total entities: ${stats.entityCount}
-• Total relationships: ${stats.relationshipCount}
+${stats ? `• Total entities: ${stats.entityCount}
+• Total relationships: ${stats.relationshipCount}` : '• Domain information not available'}
 • Entities in diagram: ${options.maxEntities}
 • Format: ${options.format}
 ${options.filterDomains.length > 0 ? `• Filtered domains: ${options.filterDomains.join(', ')}` : ''}
@@ -1618,7 +1630,14 @@ ${relationships.length > 50 ? '\n... and more. Use more specific filters to see 
       );
     }
 
-    const entitiesByDomain = this.diagramGenerator.getEntitiesByDomain();
+    if (!this.currentVersionNumber) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        "Domain information is not available for custom data standards. Use a standard version (4.0, 5.0, 5.1, or 5.2) to access domain information."
+      );
+    }
+
+    const entitiesByDomain = this.diagramGenerator.getEntitiesByDomain(this.currentVersionNumber);
 
     if (domain) {
       const domainEntities = entitiesByDomain[domain];
@@ -1702,12 +1721,15 @@ Use get_schema_details to get more information about any entity.`,
         fs.writeFileSync(exportPath, diagramText);
       }
 
-      const stats = this.diagramGenerator.getStats();
+      let stats = null;
+      if (this.currentVersionNumber) {
+        stats = this.diagramGenerator.getStats(this.currentVersionNumber);
+      }
 
       let responseText = `# Diagram Export (${format.toUpperCase()})
 
 **Generated from:** ${this.currentVersion}
-**Entities included:** ${Math.min(maxEntities, stats.entityCount)}
+**Entities included:** ${stats ? Math.min(maxEntities, stats.entityCount) : 'Unknown'}
 **Format:** ${format}
 ${filterDomains.length > 0 ? `**Filtered domains:** ${filterDomains.join(', ')}` : ''}
 ${filename ? `**Saved to:** ${exportPath}` : ''}
