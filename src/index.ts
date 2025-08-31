@@ -6,6 +6,8 @@ import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
@@ -78,15 +80,18 @@ class EdFiMCPServer {
       {
         name: "ed-fi-sdk",
         version: "0.1.0",
+        instructions: "This MCP server provides tools for working with Ed-Fi Data Standard APIs and schemas. Use the available tools to explore endpoints, schemas, and generate entity relationship diagrams. Additionally, three helpful prompt templates are available: 'ed-fi-authentication-guide' for OAuth 2.0 setup, 'ed-fi-api-quickstart' for common operations, and 'ed-fi-data-validation' for data validation strategies. Start by setting a data standard version using set_data_standard_version."
       },
       {
         capabilities: {
           tools: {},
+          prompts: {},
         },
       }
     );
 
     this.setupToolHandlers();
+    this.setupPromptHandlers();
   }
 
   private ensureCacheDirectory(): void {
@@ -380,6 +385,579 @@ class EdFiMCPServer {
           throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
       }
     });
+  }
+
+  private setupPromptHandlers(): void {
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      return {
+        prompts: [
+          {
+            name: "ed-fi-authentication-guide",
+            description: "A comprehensive guide on how to authenticate with Ed-Fi APIs, including OAuth 2.0 setup and best practices"
+          },
+          {
+            name: "ed-fi-api-quickstart",
+            description: "Quick start guide for using Ed-Fi APIs, including common endpoints and data operations"
+          },
+          {
+            name: "ed-fi-data-validation",
+            description: "Guidelines for validating Ed-Fi data submissions and understanding error responses"
+          }
+        ]
+      };
+    });
+
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      switch (request.params.name) {
+        case "ed-fi-authentication-guide":
+          return {
+            description: "Ed-Fi API Authentication Guide",
+            messages: [
+              {
+                role: "user",
+                content: {
+                  type: "text",
+                  text: "How do I authenticate with Ed-Fi APIs?"
+                }
+              },
+              {
+                role: "assistant",
+                content: {
+                  type: "text",
+                  text: this.getAuthenticationGuideContent()
+                }
+              }
+            ]
+          };
+
+        case "ed-fi-api-quickstart":
+          return {
+            description: "Ed-Fi API Quick Start Guide",
+            messages: [
+              {
+                role: "user",
+                content: {
+                  type: "text",
+                  text: "I'm new to Ed-Fi APIs. How do I get started with common operations?"
+                }
+              },
+              {
+                role: "assistant",
+                content: {
+                  type: "text",
+                  text: this.getQuickStartGuideContent()
+                }
+              }
+            ]
+          };
+
+        case "ed-fi-data-validation":
+          return {
+            description: "Ed-Fi Data Validation Guidelines",
+            messages: [
+              {
+                role: "user",
+                content: {
+                  type: "text",
+                  text: "How do I validate data before submitting to Ed-Fi APIs and understand error responses?"
+                }
+              },
+              {
+                role: "assistant",
+                content: {
+                  type: "text",
+                  text: this.getDataValidationGuideContent()
+                }
+              }
+            ]
+          };
+
+        default:
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Unknown prompt: ${request.params.name}`
+          );
+      }
+    });
+  }
+
+  private getAuthenticationGuideContent(): string {
+    return `# Ed-Fi API Authentication Guide
+
+## Overview
+Ed-Fi APIs use OAuth 2.0 Client Credentials flow for authentication. This guide covers the authentication process and best practices.
+
+## Authentication Steps
+
+### 1. Obtain Client Credentials
+First, you need to register your application with the Ed-Fi API to get:
+- **Client ID**: Unique identifier for your application
+- **Client Secret**: Secret key for your application
+- **Base URL**: The Ed-Fi API base URL (e.g., https://api.schooldistrict.org/v5.3/api)
+
+### 2. Request Access Token
+Make a POST request to the OAuth token endpoint:
+
+\`\`\`http
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET
+\`\`\`
+
+### 3. Use Access Token
+Include the access token in subsequent API requests:
+
+\`\`\`http
+GET /data/v3/ed-fi/students
+Authorization: Bearer YOUR_ACCESS_TOKEN
+\`\`\`
+
+## Best Practices
+
+### Security
+- **Never expose credentials**: Store client credentials securely (environment variables, key vaults)
+- **Use HTTPS**: All API calls must use HTTPS
+- **Token expiration**: Access tokens typically expire in 1 hour, implement refresh logic
+- **Scope limitation**: Request only the scopes your application needs
+
+### Error Handling
+- **401 Unauthorized**: Token expired or invalid - refresh token
+- **403 Forbidden**: Insufficient permissions - check scopes
+- **429 Too Many Requests**: Implement exponential backoff
+
+### Example Implementation (JavaScript/Node.js)
+
+\`\`\`javascript
+const axios = require('axios');
+
+class EdFiClient {
+  constructor(baseUrl, clientId, clientSecret) {
+    this.baseUrl = baseUrl;
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  async authenticate() {
+    const tokenUrl = \`\${this.baseUrl}/oauth/token\`;
+    const params = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: this.clientId,
+      client_secret: this.clientSecret
+    });
+
+    try {
+      const response = await axios.post(tokenUrl, params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+
+      this.accessToken = response.data.access_token;
+      this.tokenExpiry = Date.now() + (response.data.expires_in * 1000);
+      
+      return this.accessToken;
+    } catch (error) {
+      throw new Error(\`Authentication failed: \${error.response?.data?.error_description}\`);
+    }
+  }
+
+  async makeRequest(endpoint, method = 'GET', data = null) {
+    // Check if token needs refresh
+    if (!this.accessToken || Date.now() >= this.tokenExpiry) {
+      await this.authenticate();
+    }
+
+    const config = {
+      method,
+      url: \`\${this.baseUrl}/data/v3\${endpoint}\`,
+      headers: {
+        'Authorization': \`Bearer \${this.accessToken}\`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    if (data) config.data = data;
+
+    try {
+      const response = await axios(config);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        // Token expired, try once more
+        await this.authenticate();
+        config.headers['Authorization'] = \`Bearer \${this.accessToken}\`;
+        return await axios(config);
+      }
+      throw error;
+    }
+  }
+}
+
+// Usage
+const client = new EdFiClient(
+  process.env.EDFI_BASE_URL,
+  process.env.EDFI_CLIENT_ID,
+  process.env.EDFI_CLIENT_SECRET
+);
+
+// Get students
+const students = await client.makeRequest('/ed-fi/students');
+\`\`\`
+
+## Common Endpoints
+
+After authentication, you can access these common endpoints:
+
+- **Students**: \`/data/v3/ed-fi/students\`
+- **Schools**: \`/data/v3/ed-fi/schools\`
+- **Staff**: \`/data/v3/ed-fi/staffs\`
+- **Assessments**: \`/data/v3/ed-fi/assessments\`
+- **Student School Associations**: \`/data/v3/ed-fi/studentSchoolAssociations\`
+
+## Troubleshooting
+
+### Common Issues
+1. **Invalid client credentials**: Double-check client ID and secret
+2. **SSL certificate errors**: Ensure proper certificate validation
+3. **Rate limiting**: Implement proper throttling (typically 100 requests/minute)
+4. **Data format errors**: Use proper JSON formatting for POST/PUT requests
+
+### Environment Variables
+Set up these environment variables for secure credential management:
+
+\`\`\`bash
+EDFI_BASE_URL=https://api.schooldistrict.org/v5.3/api
+EDFI_CLIENT_ID=your_client_id_here
+EDFI_CLIENT_SECRET=your_client_secret_here
+\`\`\`
+
+This authentication approach ensures secure and reliable access to Ed-Fi APIs while following OAuth 2.0 best practices.`;
+  }
+
+  private getQuickStartGuideContent(): string {
+    return `# Ed-Fi API Quick Start Guide
+
+## Getting Started with Ed-Fi APIs
+
+This guide helps you quickly get started with the most common Ed-Fi API operations.
+
+## Prerequisites
+1. Ed-Fi API credentials (Client ID and Secret)
+2. Base API URL from your district/vendor
+3. Access to the Ed-Fi API documentation (usually at \`/docs\`)
+
+## Essential API Patterns
+
+### 1. Reading Data (GET Operations)
+
+#### Get All Students
+\`\`\`http
+GET /data/v3/ed-fi/students
+Authorization: Bearer YOUR_ACCESS_TOKEN
+\`\`\`
+
+#### Get Students with Filtering
+\`\`\`http
+GET /data/v3/ed-fi/students?schoolId=123&limit=100&offset=0
+Authorization: Bearer YOUR_ACCESS_TOKEN
+\`\`\`
+
+#### Get Student by ID
+\`\`\`http
+GET /data/v3/ed-fi/students/STUDENT_UNIQUE_ID
+Authorization: Bearer YOUR_ACCESS_TOKEN
+\`\`\`
+
+### 2. Creating Data (POST Operations)
+
+#### Create a New Student
+\`\`\`http
+POST /data/v3/ed-fi/students
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "studentUniqueId": "12345",
+  "personalTitlePrefix": "Mr",
+  "firstName": "John",
+  "lastSurname": "Doe",
+  "birthDate": "2010-05-15",
+  "birthSexDescriptor": "uri://ed-fi.org/BirthSexDescriptor#Male"
+}
+\`\`\`
+
+### 3. Updating Data (PUT Operations)
+
+#### Update Student Information
+\`\`\`http
+PUT /data/v3/ed-fi/students/12345
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "studentUniqueId": "12345",
+  "personalTitlePrefix": "Mr",
+  "firstName": "John",
+  "middleName": "Michael",
+  "lastSurname": "Doe",
+  "birthDate": "2010-05-15",
+  "birthSexDescriptor": "uri://ed-fi.org/BirthSexDescriptor#Male"
+}
+\`\`\`
+
+### 4. Deleting Data (DELETE Operations)
+
+#### Delete a Student
+\`\`\`http
+DELETE /data/v3/ed-fi/students/12345
+Authorization: Bearer YOUR_ACCESS_TOKEN
+\`\`\`
+
+## Common Query Parameters
+
+### Pagination
+- \`limit\`: Number of records to return (default: 25, max: usually 500)
+- \`offset\`: Number of records to skip
+
+### Filtering
+- Use resource properties as query parameters
+- Example: \`?schoolId=123&gradeLevel=Fifth grade\`
+
+### Sorting
+- \`orderBy\`: Field to sort by
+- Add \`%20desc\` for descending order
+
+## Essential Endpoints by Domain
+
+### Student Information
+- **Students**: \`/ed-fi/students\`
+- **Student School Associations**: \`/ed-fi/studentSchoolAssociations\`
+- **Student Education Organization Associations**: \`/ed-fi/studentEducationOrganizationAssociations\`
+
+### School & Staff Information  
+- **Schools**: \`/ed-fi/schools\`
+- **Education Organizations**: \`/ed-fi/educationOrganizations\`
+- **Staff**: \`/ed-fi/staffs\`
+- **Staff Education Organization Assignments**: \`/ed-fi/staffEducationOrganizationAssignmentAssociations\`
+
+### Academic Information
+- **Courses**: \`/ed-fi/courses\`
+- **Sections**: \`/ed-fi/sections\`
+- **Student Section Associations**: \`/ed-fi/studentSectionAssociations\`
+- **Grades**: \`/ed-fi/grades\`
+
+### Assessment Information
+- **Assessments**: \`/ed-fi/assessments\`
+- **Student Assessments**: \`/ed-fi/studentAssessments\`
+- **Assessment Items**: \`/ed-fi/assessmentItems\`
+
+## Best Practices
+
+### 1. Start Small
+Begin with read operations (GET) before attempting writes (POST/PUT)
+
+### 2. Use the Swagger/OpenAPI Documentation
+Most Ed-Fi APIs provide interactive documentation at \`/docs\`
+
+### 3. Understand Dependencies
+Some resources depend on others existing first:
+- Students must exist before Student School Associations
+- Schools must exist before Student School Associations
+- Courses must exist before Sections
+
+### 4. Handle Errors Gracefully
+Common HTTP status codes:
+- **200**: Success
+- **201**: Created successfully  
+- **400**: Bad request (validation errors)
+- **401**: Unauthorized (authentication issue)
+- **404**: Not found
+- **409**: Conflict (duplicate key)
+
+### 5. Use Descriptors Correctly
+Ed-Fi uses URI-based descriptors for standardized values:
+\`\`\`javascript
+"gradeLevel": "uri://ed-fi.org/GradeLevelDescriptor#Fifth grade"
+"sexDescriptor": "uri://ed-fi.org/SexDescriptor#Female" 
+\`\`\`
+
+## Sample Workflow: Enrolling a Student
+
+\`\`\`javascript
+// 1. Create the student
+const student = {
+  "studentUniqueId": "12345",
+  "firstName": "Jane",
+  "lastSurname": "Smith", 
+  "birthDate": "2010-03-15",
+  "birthSexDescriptor": "uri://ed-fi.org/BirthSexDescriptor#Female"
+};
+
+await client.makeRequest('/ed-fi/students', 'POST', student);
+
+// 2. Associate student with school
+const association = {
+  "studentReference": {
+    "studentUniqueId": "12345"
+  },
+  "schoolReference": {
+    "schoolId": 123
+  },
+  "entryDate": "2023-08-15",
+  "entryGradeLevelDescriptor": "uri://ed-fi.org/GradeLevelDescriptor#Fifth grade"
+};
+
+await client.makeRequest('/ed-fi/studentSchoolAssociations', 'POST', association);
+\`\`\`
+
+## Next Steps
+1. Review the complete API documentation for your Ed-Fi version
+2. Set up proper error handling and logging
+3. Implement data validation before API calls
+4. Consider bulk operations for large data sets
+5. Test thoroughly in a sandbox environment
+
+Remember: Always test API operations in a development environment before using in production!`;
+  }
+
+  private getDataValidationGuideContent(): string {
+    return `# Ed-Fi Data Validation Guidelines
+
+## Overview
+Proper data validation is crucial for successful Ed-Fi API operations. This guide covers validation strategies and error interpretation.
+
+## Pre-Submission Validation
+
+### 1. Required Fields Validation
+Always validate that required fields are present and non-empty:
+
+\`\`\`javascript
+function validateStudent(student) {
+  const required = ['studentUniqueId', 'firstName', 'lastSurname', 'birthDate'];
+  const missing = required.filter(field => !student[field]);
+  
+  if (missing.length > 0) {
+    throw new Error(\`Missing required fields: \${missing.join(', ')}\`);
+  }
+}
+\`\`\`
+
+### 2. Data Type Validation
+Ensure data types match Ed-Fi specifications:
+
+\`\`\`javascript
+function validateDataTypes(data) {
+  // Dates should be in YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (data.birthDate && !dateRegex.test(data.birthDate)) {
+    throw new Error('Birth date must be in YYYY-MM-DD format');
+  }
+  
+  // Numbers should be actual numbers
+  if (data.schoolId && typeof data.schoolId !== 'number') {
+    throw new Error('School ID must be a number');
+  }
+}
+\`\`\`
+
+### 3. Descriptor Validation
+Validate that descriptors use correct URIs:
+
+\`\`\`javascript
+const VALID_GRADE_LEVELS = [
+  'uri://ed-fi.org/GradeLevelDescriptor#Kindergarten',
+  'uri://ed-fi.org/GradeLevelDescriptor#First grade',
+  'uri://ed-fi.org/GradeLevelDescriptor#Second grade',
+  // ... etc
+];
+
+function validateDescriptors(data) {
+  if (data.gradeLevel && !VALID_GRADE_LEVELS.includes(data.gradeLevel)) {
+    throw new Error(\`Invalid grade level descriptor: \${data.gradeLevel}\`);
+  }
+}
+\`\`\`
+
+## Understanding API Error Responses
+
+### Common HTTP Status Codes
+
+#### 400 Bad Request
+Indicates validation errors in your request data.
+
+**Example Response:**
+\`\`\`json
+{
+  "detail": "The request is invalid.",
+  "errors": {
+    "firstName": ["The firstName field is required."],
+    "birthDate": ["The birthDate field must be a valid date."]
+  },
+  "instance": "/data/v3/ed-fi/students",
+  "status": 400,
+  "title": "One or more validation errors occurred.",
+  "type": "https://httpstatuses.com/400"
+}
+\`\`\`
+
+**How to Handle:**
+\`\`\`javascript
+try {
+  await client.makeRequest('/ed-fi/students', 'POST', studentData);
+} catch (error) {
+  if (error.response?.status === 400) {
+    const errors = error.response.data.errors;
+    console.log('Validation errors:', errors);
+    
+    // Fix each validation error
+    Object.keys(errors).forEach(field => {
+      console.log(\`Field '\${field}': \${errors[field].join(', ')}\`);
+    });
+  }
+}
+\`\`\`
+
+## Error Recovery Strategies
+
+### 1. Retry Logic
+Implement intelligent retry for transient errors:
+
+\`\`\`javascript
+async function makeRequestWithRetry(endpoint, method, data, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await client.makeRequest(endpoint, method, data);
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      
+      // Retry on server errors (5xx) but not client errors (4xx)
+      if (error.response?.status >= 500) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      
+      throw error; // Don't retry client errors
+    }
+  }
+}
+\`\`\`
+
+## Validation Checklist
+
+Before submitting data to Ed-Fi APIs, verify:
+
+- [ ] All required fields are present and valid
+- [ ] Data types match specification (strings, numbers, dates)
+- [ ] Dates are in YYYY-MM-DD format
+- [ ] Descriptors use proper URI format
+- [ ] Referenced entities exist (for associations)
+- [ ] Business rules are satisfied
+- [ ] No duplicate keys exist
+- [ ] Field lengths don't exceed limits
+- [ ] Numeric values are within valid ranges
+
+Remember: Validation is your first line of defense against API errors. Implement comprehensive validation to ensure smooth data operations and better error handling.`;
   }
 
   private async listAvailableVersions() {

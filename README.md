@@ -15,8 +15,17 @@ An MCP Server for the Ed-Fi Data Standard that helps developers build client app
 - **🆕 Interactive Entity Analysis**: Explore relationships between core entities (students, schools, assessments, etc.)
 - **🆕 Domain Filtering**: Filter diagrams by entity type or domain area
 - **🆕 Multiple Export Formats**: Export diagrams as text for use in various visualization tools
+- **🆕 Prompt Documentation**: Access comprehensive guides and best practices through AI prompts
 
-## Documents
+## Documentation & Prompts
+
+The MCP server includes built-in prompt templates that provide detailed guidance on working with Ed-Fi APIs:
+
+- **ed-fi-authentication-guide**: Complete OAuth 2.0 authentication guide with code examples
+- **ed-fi-api-quickstart**: Quick start guide for common API operations (GET, POST, PUT, DELETE)
+- **ed-fi-data-validation**: Data validation strategies and error handling techniques
+
+These prompts can be accessed through any MCP-compatible AI assistant and provide contextual help for Ed-Fi development tasks.
 
 - [Local Usage](./docs/local-usage.md)
 - [Schema Visualization Guide](./docs/schema-visualization.md)
