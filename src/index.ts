@@ -80,7 +80,7 @@ class EdFiMCPServer {
       {
         name: "ed-fi-sdk",
         version: "0.1.0",
-        instructions: "This MCP server provides tools for working with Ed-Fi Data Standard APIs and schemas. Use the available tools to explore endpoints, schemas, and generate entity relationship diagrams. Additionally, three helpful prompt templates are available: 'ed-fi-authentication-guide' for OAuth 2.0 setup, 'ed-fi-api-quickstart' for common operations, and 'ed-fi-data-validation' for data validation strategies. Start by setting a data standard version using set_data_standard_version."
+        instructions: "This MCP server provides tools for working with Ed-Fi Data Standard APIs and schemas. Use the available tools to explore endpoints, schemas, and generate entity relationship diagrams. Additionally, three helpful prompt templates are available: 'ed-fi-auth-discovery-guide' for OAuth 2.0 setup, 'ed-fi-api-quickstart' for common operations, and 'ed-fi-data-validation' for data validation strategies. Start by setting a data standard version using set_data_standard_version."
       },
       {
         capabilities: {
