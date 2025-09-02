@@ -843,7 +843,7 @@ The diagram has been saved to ${outputPath} for your convenience.`;
 }
 
 // Main execution
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1]?.endsWith('cli.js') || process.argv[1]?.endsWith('cli.ts')) {
   const cli = new EdFiCLI();
   
   // Handle Ctrl+C gracefully

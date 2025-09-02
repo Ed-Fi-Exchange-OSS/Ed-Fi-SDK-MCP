@@ -18,12 +18,6 @@ npm run cli
 npm run cli-dev
 ```
 
-### 3. Run the Demo
-
-```bash
-node src/demo.mjs
-```
-
 ## Available Commands
 
 ### Basic Commands
@@ -60,7 +54,7 @@ node src/demo.mjs
 
 ## Example Session
 
-```
+```shell
 ed-fi> version 5.2
 🔄 Setting Ed-Fi Data Standard version to 5.2...
 ✅ Successfully loaded Ed-Fi Data Standard 5.2
@@ -155,25 +149,25 @@ cli.rl.close();
 
 2. **Filter diagrams by domain** - Large diagrams can be overwhelming, use domain filters:
 
-   ```
+   ```shell
    diagram mermaid Student Assessment
    ```
 
 3. **Export diagrams for documentation** - Save diagrams to include in your project docs:
 
-   ```
+   ```shell
    export mermaid student-entities.md
    ```
 
 4. **Check relationships** - Understand how entities connect:
 
-   ```
+   ```shell
    relationships Student
    ```
 
 5. **Explore specific endpoints** - Get detailed information about API usage:
 
-   ```
+   ```shell
    endpoint /ed-fi/students GET
    ```
 
@@ -181,19 +175,19 @@ cli.rl.close();
 
 ### Common Issues
 
-**"No Data Standard version loaded"**
+#### No Data Standard version loaded
 
 - Solution: Run `version <version>` first to load a specification
 
-**"Network timeout"**
+#### Network timeout
 
 - Solution: Check internet connection, specification downloads may take time
 
-**"Schema not found"**
+#### Schema not found
 
 - Solution: Use `search schemas <query>` to find the correct schema name
 
-**"Endpoint not found"**
+#### Endpoint not found
 
 - Solution: Use `search endpoints <query>` to find available endpoints
 
@@ -209,7 +203,7 @@ cli.rl.close();
 
 If you have a custom Ed-Fi implementation:
 
-```
+```shell
 custom https://your-api.example.com/swagger.json "My Custom Ed-Fi API"
 ```
 

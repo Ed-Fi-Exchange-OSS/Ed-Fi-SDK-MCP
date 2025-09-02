@@ -9,8 +9,8 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "cli": "npm run build && node dist/cli.js",
-    "cli-dev": "tsx src/cli.ts",
-    "demo": "npm run build && node dist/demo.js",
+    "cli:dev": "tsx src/cli.ts",
+    "cli:demo": "npm run build && node dist/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
