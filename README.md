@@ -1,5 +1,7 @@
 # Ed-Fi Data Standard MCP Server
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Ed-Fi-Exchange-OSS/Ed-Fi-Data-Standard-MCP-Server/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Ed-Fi-Exchange-OSS/Ed-Fi-Data-Standard-MCP-Server)
+
 An MCP Server for the Ed-Fi Data Standard that helps developers build client applications that interact with Ed-Fi APIs through AI assistants like GitHub Copilot, Claude Code, Cursor, etc.
 
 ## Features
