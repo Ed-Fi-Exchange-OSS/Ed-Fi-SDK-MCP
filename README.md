@@ -15,8 +15,17 @@ An MCP Server for the Ed-Fi Data Standard that helps developers build client app
 - **🆕 Interactive Entity Analysis**: Explore relationships between core entities (students, schools, assessments, etc.)
 - **🆕 Domain Filtering**: Filter diagrams by entity type or domain area
 - **🆕 Multiple Export Formats**: Export diagrams as text for use in various visualization tools
+- **🆕 Prompt Documentation**: Access comprehensive guides and best practices through AI prompts
 
-## Documents
+## Documentation & Prompts
+
+The MCP server includes built-in prompt templates that provide detailed guidance on working with Ed-Fi APIs:
+
+- **ed-fi-authentication-guide**: Complete OAuth 2.0 authentication guide with code examples
+- **ed-fi-api-quickstart**: Quick start guide for common API operations (GET, POST, PUT, DELETE)
+- **ed-fi-data-validation**: Data validation strategies and error handling techniques
+
+These prompts can be accessed through any MCP-compatible AI assistant and provide contextual help for Ed-Fi development tasks.
 
 - [Local Usage](./docs/local-usage.md)
 - [Schema Visualization Guide](./docs/schema-visualization.md)
@@ -28,7 +37,7 @@ An MCP Server for the Ed-Fi Data Standard that helps developers build client app
 > These installation instructions are not ready for usage yet.
 >
 > 1. Written by Copilot and not verified, other than the VS Code instructions.
-> 2. They will only work once `ed-fi-data-standard-mcp-server` has been published to npmjs.com.
+> 2. They will only work once `ed-fi-sdk-mcp` has been published to npmjs.com.
 
 This MCP server can be integrated with popular AI coding assistants to provide Ed-Fi Data Standard context during development.
 
@@ -41,7 +50,7 @@ Add the following to your Claude Desktop configuration file (`~/Library/Applicat
   "mcpServers": {
     "ed-fi-data-standard": {
       "command": "npx",
-      "args": ["ed-fi-data-standard-mcp-server"],
+      "args": ["ed-fi-sdk-mcp"],
       "env": {}
     }
   }
@@ -52,7 +61,7 @@ Add the following to your Claude Desktop configuration file (`~/Library/Applicat
 
 1. Install the Cline extension in VS Code
 2. Configure the MCP server in Cline's settings:
-   - Command: `npx ed-fi-data-standard-mcp-server`
+   - Command: `npx ed-fi-sdk-mcp`
    - Transport: stdio
 
 ### Continue.dev
@@ -65,7 +74,7 @@ Add the following to your Continue configuration:
     "servers": {
       "ed-fi-data-standard": {
         "command": "npx",
-        "args": ["ed-fi-data-standard-mcp-server"]
+        "args": ["ed-fi-sdk-mcp"]
       }
     }
   }
@@ -77,7 +86,7 @@ Add the following to your Continue configuration:
 Configure the MCP server in Cursor's MCP settings:
 
 - Server name: ed-fi-data-standard
-- Command: `npx ed-fi-data-standard-mcp-server`
+- Command: `npx ed-fi-sdk-mcp`
 
 ### GitHub Copilot
 
@@ -89,11 +98,11 @@ Configure the MCP server in Cursor's MCP settings:
     ```json
     {
      "servers": {
-      "ed-fi-data-standard-mcp-server": {
+      "ed-fi-sdk-mcp": {
        "type": "stdio",
        "command": "npx",
        "args": [
-        "ed-fi-data-standard-mcp-server"
+        "ed-fi-sdk-mcp"
        ]
       }
      },
@@ -114,7 +123,7 @@ If you've installed the package globally or locally, you can also use:
 
 ```bash
 # Global installation
-npm install -g ed-fi-data-standard-mcp-server
+npm install -g ed-fi-sdk-mcp
 
 # Then reference it directly
 ed-fi-mcp-server
@@ -238,13 +247,13 @@ The MCP server supports the following environment variables for configuration:
 
 ```bash
 # Using a custom Ed-Fi instance
-ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 npx ed-fi-data-standard-mcp-server
+ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 npx ed-fi-sdk-mcp
 
 # Custom cache directory
-ED_FI_CACHE_DIR=/opt/cache/ed-fi npx ed-fi-data-standard-mcp-server
+ED_FI_CACHE_DIR=/opt/cache/ed-fi npx ed-fi-sdk-mcp
 
 # Both options together
-ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 ED_FI_CACHE_DIR=/opt/cache/ed-fi npx ed-fi-data-standard-mcp-server
+ED_FI_CUSTOM_BASE_URL=https://my-ed-fi.org/v7.3 ED_FI_CACHE_DIR=/opt/cache/ed-fi npx ed-fi-sdk-mcp
 ```
 
 ## Supported Ed-Fi Data Standard Versions

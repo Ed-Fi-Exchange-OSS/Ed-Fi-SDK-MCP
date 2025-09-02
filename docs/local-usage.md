@@ -33,7 +33,7 @@ npm run dev
 
 The `dev` command is loaded into the `.vscode/mcp.json` file, which will load the chat agent within this workspace.
 
-Open the Copilot Chat. Click on the Tools button and confirm that the `ed-fi-data-standard-mcp-server` is loaded. Try a command such as:
+Open the Copilot Chat. Click on the Tools button and confirm that the `ed-fi-sdk-mcp` is loaded. Try a command such as:
 
 ```shell
 set_data_standard_version 5.2
