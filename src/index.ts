@@ -774,16 +774,6 @@ GET {dataManagementApiUrl}/ed-fi/students/STUDENT_UNIQUE_ID
 Authorization: Bearer YOUR_ACCESS_TOKEN
 \`\`\`
 
-GET {dataManagementApiUrl}/ed-fi/students?schoolId=123&limit=100&offset=0
-Authorization: Bearer YOUR_ACCESS_TOKEN
-\`\`\`
-
-#### Get Student by ID
-\`\`\`http
-GET {dataManagementApiUrl}/ed-fi/students/STUDENT_UNIQUE_ID
-Authorization: Bearer YOUR_ACCESS_TOKEN
-\`\`\`
-
 ### 2. Creating Data (POST Operations)
 
 #### Create a New Student
