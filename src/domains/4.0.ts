@@ -1,11 +1,10 @@
-Extracting domain information from .metaed files...
+/**
+ * Ed-Fi Data Standard Domain Information for Version 4.0
+ */
 
-Domain information extracted successfully!
-Found 27 domains/subdomains.
-Output written to: D:\ed-fi\Ed-Fi-Model\domain-information.json
+import type { DomainData } from './types.js';
 
-Extracted domain information:
-[
+export const DOMAIN_DATA_4_0: DomainData = [
   {
     "AlternativeAndSupplementalServices": {
       "documentation": "This domain defines the model for a wide range of programs, including education programs, alternative programs, extracurricular programs, supplemental programs, and early learning programs.\n* A Program entity defines programs with services offered by an education organization.\n* A StudentProgramAssociation links Program entities to participating students.\n* A StaffProgramAssociation links Program entities to assigned staff.",
@@ -77,6 +76,7 @@ Extracted domain information:
         "Course",
         "CourseOffering",
         "EducationOrganization",
+        "LearningObjective",
         "LearningStandard",
         "School",
         "Session"
@@ -86,13 +86,16 @@ Extracted domain information:
   },
   {
     "Discipline": {
-      "documentation": "The Discipline domain is based upon the concepts of a DisciplineIncident (i.e., the violation or offense) and a DisciplineAction (i.e., the punishment).\n* A DisciplineIncident represents the actions or behaviors that constitute an \"\"offense\"\" in violation of laws, rules, policies, or norms of behavior. The DisciplineIncident is associated with the school where the incident occurred.\n* A DisciplineAction represents the punitive or other actions taken against the students. One or more DisciplineActions may be applied to one DisciplineIncident(e.g., suspension plus after-school study hall). Alternatively, one DisciplineAction could have multiple Disciplines as an attribute to accomplish the same thing.",
+      "documentation": "The Discipline domain is based upon the concepts of a DisciplineIncident (i.e., the violation or offense) and a DisciplineAction (i.e., the punishment).\n* A DisciplineIncident represents the actions or behaviors that constitute an \"\"offense\"\" in violation of laws, rules, policies, or norms of behavior. The DisciplineIncident is associated with the school where the incident occurred.\n* StudentDisciplineIncidentAssociation links students to DisciplineIncidents and indicates their role in that incident. When multiple students are involved in a DisciplineIncident, the StudentParticipation attribute indicates what the involvement of the student was in that incident (e.g., perpetrator, victim, witness). The Behaviors attribute is used when students have different levels of involvement, and therefore different offenses, for the same discipline incident (e.g., one might have used a knife in a fight versus another who fought without a weapon).\n* A DisciplineAction represents the punitive or other actions taken against the students. One or more DisciplineActions may be applied to one DisciplineIncident(e.g., suspension plus after-school study hall). Alternatively, one DisciplineAction could have multiple Disciplines as an attribute to accomplish the same thing.",
       "entities": [
         "DisciplineAction",
         "DisciplineIncident",
         "School",
         "Staff",
         "Student"
+      ],
+      "associations": [
+        "StudentDisciplineIncidentAssociation"
       ]
     }
   },
@@ -151,7 +154,7 @@ Extracted domain information:
         "LocalContractedStaff",
         "LocalEncumbrance",
         "LocalPayroll",
-        "ObjectDimension",
+        "ObjectDimentsion",
         "OperationalUnitDimension",
         "ProgramDimension",
         "ProjectDimension",
@@ -224,11 +227,13 @@ Extracted domain information:
         "EducationOrganization",
         "Grade",
         "GradingPeriod",
+        "LearningObjective",
         "Program",
         "ReportCard",
         "Section",
         "Student",
-        "StudentCompetencyObjective"
+        "StudentCompetencyObjective",
+        "StudentLearningObjective"
       ],
       "associations": [
         "StudentProgramAssociation",
@@ -333,6 +338,7 @@ Extracted domain information:
     "Standards (Subdomain of Assessment)": {
       "documentation": "LearningStandard may also be hierarchically organized to support the use case that adopters of the Common Core often decompose a standard into lower level standards in their curriculum. The HasAssociatedPrerequisite association captures prerequisites for a LearningStandard as would be specified in a learning map.",
       "entities": [
+        "LearningObjective",
         "LearningStandard"
       ],
       "parentDomain": "Assessment"
@@ -350,6 +356,7 @@ Extracted domain information:
         "Grade",
         "GradebookEntry",
         "GradingPeriod",
+        "LearningObjective",
         "LearningStandard",
         "Program",
         "ReportCard",
@@ -359,7 +366,8 @@ Extracted domain information:
         "Student",
         "StudentAcademicRecord",
         "StudentCompetencyObjective",
-        "StudentGradebookEntry"
+        "StudentGradebookEntry",
+        "StudentLearningObjective"
       ],
       "associations": [
         "StudentProgramAssociation",
@@ -369,7 +377,7 @@ Extracted domain information:
   },
   {
     "StudentAssessment (Subdomain of Assessment)": {
-      "documentation": "Assessment represents a specific administration of an assessment. The Assessment entity contains the minimum amount of metadata required for an assessment.\n* If the Assessment is associated with one or more sections, an association is made to the section(s).\n* ObjectiveAssessment is the optional identification of portions of the assessment that test specific learning objectives. If required, there can be multiple levels of hierarchical ObjectiveAssessments.\n* The AssessmentItem supports the optional identification of the individual questions or items on a test to be scored. Typically, the identification of AssessmentItems is done in conjunction with their mapping to LearningStandards.\n* If the assessment references the common core or other state standards for LearningStandards, then the assessment metadata would reference the preloaded standards. If the assessment references its own set of LearningStandards, then that data would be loaded as assessment metadata. An ObjectiveAssessment may test one or more LearningStandards.\n\nThe student's assessment results follow a similar structure to the assessment metadata.\n* StudentAssessment holds the overall assessment score and other information about a specific student's results for a specific assessment.The StudentAssessment is associated with a specific student.\n* StudentObjectiveAssessment optionally holds the student's score for individually scored results for a specific LearningStandards. If the assessment metadata includes ObjectiveAssessments, then there would be corresponding StudentObjectiveAssessments for each student.\n* StudentAssessmentItem optionally holds the student's score for individual AssessmentItems. If the assessment metadata includesAssessmentItems, then there would be corresponding StudentAssessmentItems for each student.",
+      "documentation": "Assessment represents a specific administration of an assessment. The Assessment entity contains the minimum amount of metadata required for an assessment.\n* If the Assessment is associated with one or more sections, an association is made to the section(s).\n* ObjectiveAssessment is the optional identification of portions of the assessment that test specific learning objectives. If required, there can be multiple levels of hierarchical ObjectiveAssessments.\n* The AssessmentItem supports the optional identification of the individual questions or items on a test to be scored. Typically, the identification of AssessmentItems is done in conjunction with their mapping to LearningStandards.\n* If the assessment references the common core or other state standards for LearningStandards and LearningObjectives, then the assessment metadata would reference the preloaded standards. If the assessment references its own set of LearningObjectives and/or LearningStandards, then that data would be loaded as assessment metadata. An ObjectiveAssessment may test one or more LearningObjectives, and/or may test one or more LearningStandards.\n\nThe student's assessment results follow a similar structure to the assessment metadata.\n* StudentAssessment holds the overall assessment score and other information about a specific student's results for a specific assessment.The StudentAssessment is associated with a specific student.\n* StudentObjectiveAssessment optionally holds the student's score for individually scored results for a specific LearningObjective. If the assessment metadata includes ObjectiveAssessments, then there would be corresponding StudentObjectiveAssessments for each student.\n* StudentAssessmentItem optionally holds the student's score for individual AssessmentItems. If the assessment metadata includesAssessmentItems, then there would be corresponding StudentAssessmentItems for each student.",
       "entities": [
         "Student",
         "StudentAssessment",
@@ -423,30 +431,16 @@ Extracted domain information:
   },
   {
     "StudentIdentificationAndDemographics": {
-      "documentation": "The Student Identification and Demographics domain represents the core information about students and parents.\n* The Student entity captures important information and characteristics of a student.\n* The Contact entity spans all variants of contact - parent, guardian, caretaker or other important contact.\n* The StudentParentAssociation links students and parents and indicates the relation.",
+      "documentation": "The Student Identification and Demographics domain represents the core information about students and parents.\n* The Student entity captures important information and characteristics of a student.\n* The Parent entity spans all variants of parent, guardian. It can also hold other important contacts that have been approved by the parent/guardian for contact in cases of emergency or even pick-up from school.\n* The StudentParentAssociation links students and parents and indicates the relation.",
       "entities": [
-        "Contact",
+        "Parent",
         "Person",
         "Student"
       ],
       "associations": [
-        "StudentContactAssociation",
-        "StudentEducationOrganizationAssociation"
+        "StudentEducationOrganizationAssociation",
+        "StudentParentAssociation"
       ]
-    }
-  },
-  {
-    "StudentProgramEvaluation (Subdomain of TeachingAndLearning)": {
-      "documentation": "",
-      "entities": [
-        "EvaluationRubricDimension",
-        "Program",
-        "ProgramEvaluation",
-        "ProgramEvaluationElement",
-        "ProgramEvaluationObjective",
-        "StudentProgramEvaluation"
-      ],
-      "parentDomain": "TeachingAndLearning"
     }
   },
   {
@@ -486,12 +480,13 @@ Extracted domain information:
   },
   {
     "TeachingAndLearning": {
-      "documentation": "The Teaching and Learning domain represents the following concepts:\n* The course catalog, representing the course definitions and course offerings available at a school in each session\n* The student's class enrollments in sections and the teacher(s) assigned to that section\n* Early childhood enrollments in programs and the staff members related to that program\n\nThe model is based upon multiple levels of definition, as follows:\n* A Course entity represents the definition of the course, its characteristics, and its mapping to LearningStandards. A course may be defined a state, LEA or school level.\n* The CourseOffering entity represents a course that is offered by a school during a session. The CourseOffering will have a LocalCourseCode and may have a LocalCourseTitle.\n* A school will have one or more sections for each CourseOffering. Students are enrolled in specific sections. Each Section entity will have one or more assigned staff, will typically meet in a specific location in the school, and will be assigned a ClassPeriodentity for the session. Since early learning teaching and learning is based on programs, students are enrolled by association to the Program and Staff entities as well.",
+      "documentation": "The Teaching and Learning domain represents the following concepts:\n* The course catalog, representing the course definitions and course offerings available at a school in each session\n* The student's class enrollments in sections and the teacher(s) assigned to that section\n* Early childhood enrollments in programs and the staff members related to that program\n\nThe model is based upon multiple levels of definition, as follows:\n* A Course entity represents the definition of the course, its characteristics, and its mapping to LearningStandards orLearningObjectives. A course may be defined a state, LEA or school level.\n* The CourseOffering entity represents a course that is offered by a school during a session. The CourseOffering will have a LocalCourseCode and may have a LocalCourseTitle.\n* A school will have one or more sections for each CourseOffering. Students are enrolled in specific sections. Each Section entity will have one or more assigned staff, will typically meet in a specific location in the school, and will be assigned a ClassPeriodentity for the session. Since early learning teaching and learning is based on programs, students are enrolled by association to the Program and Staff entities as well.",
       "entities": [
         "ClassPeriod",
         "Course",
         "CourseOffering",
         "EducationOrganization",
+        "LearningObjective",
         "LearningStandard",
         "Location",
         "Program",
@@ -511,4 +506,4 @@ Extracted domain information:
       ]
     }
   }
-]
+];

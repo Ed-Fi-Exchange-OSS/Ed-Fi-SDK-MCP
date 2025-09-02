@@ -2,9 +2,9 @@
  * Diagram generator for Ed-Fi Data Standard entity relationships
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { getDomainData } from './domains/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -339,34 +339,22 @@ export class DiagramGenerator {
    * Get entities grouped by domain/category
    */
   getEntitiesByDomain(version: string): Record<string, string[]> {
-    // Validate that domain information exists for this version
-    // Look for domain files in the src/domains directory relative to the project root
-    const projectRoot = path.resolve(__dirname, '..');
-    const domainFilePath = path.join(projectRoot, 'src', 'domains', `${version}.json`);
-    
-    if (!fs.existsSync(domainFilePath)) {
-      throw new Error(`Domain information is not available for this version.`);
-    }
-
-    // Read and parse the domain file
-    const domainFileContent = fs.readFileSync(domainFilePath, 'utf-8');
-    const domainData = JSON.parse(domainFileContent);
+    // Get domain data for the specified version
+    const domainData = getDomainData(version);
 
     // Extract all entities from the domain data and group them by domain
     const domains: Record<string, string[]> = {};
 
     for (const domainObj of domainData) {
       for (const [domainName, domainInfo] of Object.entries(domainObj)) {
-        const info = domainInfo as any;
-        
         // Initialize domain if not exists
         if (!domains[domainName]) {
           domains[domainName] = [];
         }
 
         // Add entities from this domain
-        if (info.entities && Array.isArray(info.entities)) {
-          for (const entity of info.entities) {
+        if (domainInfo.entities && Array.isArray(domainInfo.entities)) {
+          for (const entity of domainInfo.entities) {
             // Only add entities that actually exist in our analyzed entities
             if (this.entities.has(entity) && !domains[domainName].includes(entity)) {
               domains[domainName].push(entity);
@@ -375,8 +363,8 @@ export class DiagramGenerator {
         }
 
         // Add associations from this domain (they are also entities)
-        if (info.associations && Array.isArray(info.associations)) {
-          for (const association of info.associations) {
+        if (domainInfo.associations && Array.isArray(domainInfo.associations)) {
+          for (const association of domainInfo.associations) {
             // Only add associations that actually exist in our analyzed entities
             if (this.entities.has(association) && !domains[domainName].includes(association)) {
               domains[domainName].push(association);

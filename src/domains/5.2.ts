@@ -1,4 +1,10 @@
-[
+/**
+ * Ed-Fi Data Standard Domain Information for Version 5.2
+ */
+
+import type { DomainData } from './types.js';
+
+export const DOMAIN_DATA_5_2: DomainData = [
   {
     "AlternativeAndSupplementalServices": {
       "documentation": "This domain defines the model for a wide range of programs, including education programs, alternative programs, extracurricular programs, supplemental programs, and early learning programs.\n* A Program entity defines programs with services offered by an education organization.\n* A StudentProgramAssociation links Program entities to participating students.\n* A StaffProgramAssociation links Program entities to assigned staff.",
@@ -15,8 +21,18 @@
       ],
       "associations": [
         "StaffProgramAssociation",
+        "StudentCTEProgramAssociation",
+        "StudentHomelessProgramAssociation",
+        "StudentLanguageInstructionProgramAssociation",
+        "StudentMigrantEducationProgramAssociation",
+        "StudentNeglectedOrDelinquentProgramAssociation",
         "StudentProgramAssociation",
-        "StudentSectionAssociation"
+        "StudentSchoolFoodServiceProgramAssociation",
+        "StudentSection504ProgramAssociation",
+        "StudentSectionAssociation",
+        "StudentSpecialEducationProgramAssociation",
+        "StudentSpecialEducationProgramEligibilityAssociation",
+        "StudentTitleIPartAProgramAssociation"
       ]
     }
   },
@@ -26,7 +42,9 @@
       "entities": [
         "Assessment",
         "AssessmentItem",
+        "AssessmentScoreRangeLearningStandard",
         "LearningStandard",
+        "LearningStandardEquivalenceAssociation",
         "ObjectiveAssessment",
         "Program",
         "Section",
@@ -34,6 +52,9 @@
         "StudentAssessment",
         "StudentAssessmentItem",
         "StudentObjectiveAssessment"
+      ],
+      "associations": [
+        "StudentAssessmentEducationOrganizationAssociation"
       ]
     }
   },
@@ -48,6 +69,24 @@
         "Section"
       ],
       "parentDomain": "Assessment"
+    }
+  },
+  {
+    "AssessmentRegistration": {
+      "documentation": "This domain defines a model that can be used for the data recording relating to assessments registration, including early childhood assessment, state standardized assessments, college entrance exams, benchmark assessments, and/or course assessments. This domain contains:\n* Educational Organizations that are assigned to administer or participate to the assessment, and are responsible for testing and/or reporting.\n* AssessmentBatteryPart that are parts of the assessment for administering and later reporing composite scores.\n* StudentEducationOrganizationAssessmentAccommodation that describe special accommodation needs of student during the administration of assessment.",
+      "entities": [
+        "AdministrationPointOfContact",
+        "AssessmentAdministration",
+        "AssessmentAdministrationParticipation",
+        "AssessmentBatteryPart",
+        "AssessmentCustomization",
+        "Period",
+        "StudentAssessmentRegistration",
+        "StudentEducationOrganizationAssessmentAccommodation"
+      ],
+      "associations": [
+        "StudentAssessmentRegistrationBatteryPartAssociation"
+      ]
     }
   },
   {
@@ -86,6 +125,11 @@
         "School",
         "Staff",
         "Student"
+      ],
+      "associations": [
+        "StaffDisciplineIncidentAssociation",
+        "StudentDisciplineIncidentBehaviorAssociation",
+        "StudentDisciplineIncidentNonOffenderAssociation"
       ]
     }
   },
@@ -101,6 +145,7 @@
         "EducationOrganizationNetwork",
         "EducationServiceCenter",
         "LocalEducationAgency",
+        "OrganizationDepartment",
         "PostSecondaryInstitution",
         "School",
         "StateEducationAgency"
@@ -116,11 +161,13 @@
       "documentation": "The Enrollment domain represents students' enrollments in schools, as specifically designated by the StudentSchoolAssociation. The model supports the two cases of where a student is limited to be enrolled only in one school at a time or cases where a state may have policies supporting multiple school enrollments. The semantics assume that a separate StudentSchoolAssociation is provided for each grade level for each student; in other words, a student is withdrawn in the previous grade level and enrolled in the next grade level when promoted.\nFor associations between a student and a school or LEA that is *not* enrollment(e.g., school of accountability), the StudentEducationOrganizationAssociation is defined.",
       "entities": [
         "AccountabilityRating",
+        "CrisisEvent",
         "EducationOrganization",
         "GraduationPlan",
         "LocalEducationAgency",
         "School",
-        "Student"
+        "Student",
+        "StudentTransportation"
       ],
       "associations": [
         "StudentEducationOrganizationAssociation",
@@ -217,6 +264,7 @@
         "EducationOrganization",
         "Grade",
         "GradingPeriod",
+        "LearningStandard",
         "Program",
         "ReportCard",
         "Section",
@@ -253,7 +301,9 @@
       "documentation": "",
       "entities": [
         "ClassPeriod",
+        "Course",
         "CourseOffering",
+        "CourseTranscript",
         "EducationOrganization",
         "Location",
         "Program",
@@ -261,7 +311,8 @@
         "Section",
         "Session",
         "Staff",
-        "Student"
+        "Student",
+        "StudentAcademicRecord"
       ],
       "associations": [
         "StaffProgramAssociation",
@@ -415,6 +466,16 @@
     }
   },
   {
+    "StudentHealth": {
+      "documentation": "",
+      "entities": [
+        "EducationOrganization",
+        "Student",
+        "StudentHealth"
+      ]
+    }
+  },
+  {
     "StudentIdentificationAndDemographics": {
       "documentation": "The Student Identification and Demographics domain represents the core information about students and parents.\n* The Student entity captures important information and characteristics of a student.\n* The Contact entity spans all variants of contact - parent, guardian, caretaker or other important contact.\n* The StudentParentAssociation links students and parents and indicates the relation.",
       "entities": [
@@ -437,6 +498,8 @@
         "ProgramEvaluation",
         "ProgramEvaluationElement",
         "ProgramEvaluationObjective",
+        "StudentEvaluationElement",
+        "StudentEvaluationObjective",
         "StudentProgramEvaluation"
       ],
       "parentDomain": "TeachingAndLearning"
@@ -459,6 +522,14 @@
     "Survey": {
       "documentation": "* Survey, SurveySection, and SurveyQuestion that describe the survey.\n* Survey responses that follow a parallel structure of SurveyResponse, SurveySectionResponse, and SurveyQuestionResponse.\n* Associations to tie Survey and SurveyResponse domain entities to Course, Section, Program, Target EducationOrganization, and Target Staff.",
       "entities": [
+        "Contact",
+        "Course",
+        "EducationOrganization",
+        "Program",
+        "Section",
+        "Session",
+        "Staff",
+        "Student",
         "Survey",
         "SurveyQuestion",
         "SurveyQuestionResponse",
@@ -505,3 +576,4 @@
     }
   }
 ]
+;
