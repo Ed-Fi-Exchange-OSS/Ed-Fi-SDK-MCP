@@ -768,9 +768,12 @@ GET {dataManagementApiUrl}/ed-fi/students?schoolId=123&limit=100&offset=0
 Authorization: Bearer YOUR_ACCESS_TOKEN
 \`\`\`
 
-#### Get Student by ID
+#### Get Student by resource identifier
+
+TIP: this URL is in the \`location\` response header after submitting a POST request.
+
 \`\`\`http
-GET {dataManagementApiUrl}/ed-fi/students/STUDENT_UNIQUE_ID
+GET {dataManagementApiUrl}/ed-fi/students/RESOURCE_IDENTIFIER
 Authorization: Bearer YOUR_ACCESS_TOKEN
 \`\`\`
 
