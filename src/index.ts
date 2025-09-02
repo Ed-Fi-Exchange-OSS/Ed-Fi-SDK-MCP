@@ -50,19 +50,19 @@ class EdFiMCPServer {
   private readonly dataStandardVersions: DataStandardVersion[] = [
     {
       version: "4.0",
-      url: "https://api.example.org/v6.2/api/metadata/data/v3/resources/swagger.json",
+      url: "https://api.ed-fi.org/v6.2/api/metadata/data/v3/resources/swagger.json",
     },
     {
       version: "5.0",
-      url: "https://api.example.org/v7.1/api/metadata/data/v3/resources/swagger.json",
+      url: "https://api.ed-fi.org/v7.1/api/metadata/data/v3/resources/swagger.json",
     },
     {
       version: "5.1",
-      url: "https://api.example.org/v7.2/api/metadata/data/v3/resources/swagger.json",
+      url: "https://api.ed-fi.org/v7.2/api/metadata/data/v3/resources/swagger.json",
     },
     {
       version: "5.2",
-      url: "https://api.example.org/v7.3/api/metadata/data/v3/resources/swagger.json",
+      url: "https://api.ed-fi.org/v7.3/api/metadata/data/v3/resources/swagger.json",
     },
   ];
 
@@ -1116,7 +1116,7 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
     }
 
     const url = this.config.customBaseUrl 
-      ? versionInfo.url.replace(/https:\/\/api\.example\.org\/[^\/]+/, this.config.customBaseUrl)
+      ? versionInfo.url.replace(/https:\/\/api\.ed-fi\.org\/[^\/]+/, this.config.customBaseUrl)
       : versionInfo.url;
 
     this.currentVersionNumber = version;
@@ -1640,7 +1640,8 @@ ${relationships.length > 50 ? '\n... and more. Use more specific filters to see 
     const entitiesByDomain = this.diagramGenerator.getEntitiesByDomain(this.currentVersionNumber);
 
     if (domain) {
-      const domainEntities = entitiesByDomain[domain];
+      const lower = domain.toLocaleLowerCase();
+      const domainEntities = entitiesByDomain[lower];
       if (!domainEntities) {
         return {
           content: [

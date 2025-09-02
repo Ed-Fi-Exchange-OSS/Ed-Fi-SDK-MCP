@@ -348,16 +348,17 @@ export class DiagramGenerator {
     for (const domainObj of domainData) {
       for (const [domainName, domainInfo] of Object.entries(domainObj)) {
         // Initialize domain if not exists
-        if (!domains[domainName]) {
-          domains[domainName] = [];
+        const lower = domainName.toLocaleLowerCase();
+        if (!domains[lower]) {
+          domains[lower] = [];
         }
 
         // Add entities from this domain
         if (domainInfo.entities && Array.isArray(domainInfo.entities)) {
           for (const entity of domainInfo.entities) {
             // Only add entities that actually exist in our analyzed entities
-            if (this.entities.has(entity) && !domains[domainName].includes(entity)) {
-              domains[domainName].push(entity);
+            if (this.entities.has(entity) && !domains[lower].includes(entity)) {
+              domains[lower].push(entity);
             }
           }
         }
@@ -366,8 +367,8 @@ export class DiagramGenerator {
         if (domainInfo.associations && Array.isArray(domainInfo.associations)) {
           for (const association of domainInfo.associations) {
             // Only add associations that actually exist in our analyzed entities
-            if (this.entities.has(association) && !domains[domainName].includes(association)) {
-              domains[domainName].push(association);
+            if (this.entities.has(association) && !domains[lower].includes(association)) {
+              domains[lower].push(association);
             }
           }
         }
@@ -385,7 +386,7 @@ export class DiagramGenerator {
     );
 
     if (uncategorizedEntities.length > 0) {
-      domains['Other'] = uncategorizedEntities;
+      domains['other'] = uncategorizedEntities;
     }
 
     // Remove empty domains
