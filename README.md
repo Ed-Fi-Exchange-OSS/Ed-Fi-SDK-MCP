@@ -29,6 +29,8 @@ The MCP server includes built-in prompt templates that provide detailed guidance
 
 These prompts can be accessed through any MCP-compatible AI assistant and provide contextual help for Ed-Fi development tasks.
 
+For more information on using this server, see:
+
 - [Local Usage](./docs/local-usage.md)
 - [Schema Visualization Guide](./docs/schema-visualization.md)
 - [Requirements](./docs/requirements/)
