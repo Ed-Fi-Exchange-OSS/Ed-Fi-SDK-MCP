@@ -130,9 +130,47 @@ class EdFiCLI {
     }
   }
 
+  private async showVersionInfo(): Promise<void> {
+    const cliVersion = this.getCliVersion();
+    console.log('🔧 Ed-Fi SDK MCP CLI - Version Information');
+    console.log('=========================================');
+    console.log(`CLI Tool Version: ${cliVersion}`);
+    console.log(`Current Data Standard: ${this.currentVersionNumber || 'None set'}`);
+    if (this.currentSpec) {
+      console.log(`API Title: ${this.currentSpec.info?.title || 'Unknown'}`);
+      console.log(`API Version: ${this.currentSpec.info?.version || 'Unknown'}`);
+      const endpointCount = Object.keys(this.currentSpec.paths || {}).length;
+      const schemaCount = Object.keys(this.currentSpec.components?.schemas || {}).length;
+      console.log(`Endpoints: ${endpointCount}`);
+      console.log(`Schemas: ${schemaCount}`);
+    }
+    console.log(`Cache Directory: ${this.cacheDir}`);
+    console.log('');
+    console.log('📚 Getting Help:');
+    console.log('• Type "help" for available commands');
+    console.log('• Read CLI-USAGE.md for detailed usage guide');
+    console.log('• Visit https://docs.ed-fi.org/ for comprehensive documentation');
+    console.log('• Report issues: https://github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP/issues');
+  }
+
+  private getCliVersion(): string {
+    try {
+      // Read package.json to get version info
+      const packagePath = path.join(path.dirname(__dirname), 'package.json');
+      if (fs.existsSync(packagePath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        return `${packageJson.version}`;
+      }
+    } catch (error) {
+      // Fallback if package.json can't be read
+    }
+    return '0.1.0';
+  }
+
   async start(): Promise<void> {
     console.log('🎓 Ed-Fi Data Standard SDK CLI');
     console.log('=============================');
+    console.log(`Version: ${this.getCliVersion()}`);
     console.log('Type "help" for available commands or "exit" to quit.\n');
 
     await this.showWelcomeMessage();
@@ -152,8 +190,16 @@ class EdFiCLI {
     console.log('  relationships [entity]        - List entity relationships');
     console.log('  domains [domain]              - Get entities by domain');
     console.log('  export <format> [filename]    - Export diagram as text');
+    console.log('  info                          - Show version and build information');
     console.log('  help                          - Show this help message');
-    console.log('  exit                          - Exit the CLI\n');
+    console.log('  exit                          - Exit the CLI');
+    console.log('');
+    console.log('📚 Documentation:');
+    console.log('  • CLI Usage Guide: CLI-USAGE.md in the project root');
+    console.log('  • Ed-Fi Documentation: https://docs.ed-fi.org/');
+    console.log('  • Ed-Fi API Client Guide: https://docs.ed-fi.org/reference/ods-api/');
+    console.log('  • GitHub Repository: https://github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP');
+    console.log('');
   }
 
   private async commandLoop(): Promise<void> {
@@ -177,6 +223,10 @@ class EdFiCLI {
           case 'help':
           case 'h':
             await this.showWelcomeMessage();
+            break;
+            
+          case 'info':
+            await this.showVersionInfo();
             break;
             
           case 'version':
@@ -249,7 +299,19 @@ class EdFiCLI {
             break;
             
           default:
-            console.log(`Unknown command: ${command}. Type "help" for available commands.`);
+            console.log(`❌ Unknown command: "${command}"`);
+            console.log('💡 Type "help" to see all available commands');
+            console.log('💡 Type "info" for version and build information');
+            console.log('💡 Read CLI-USAGE.md for detailed examples and troubleshooting');
+            
+            // Suggest similar commands
+            const availableCommands = ['help', 'info', 'version', 'versions', 'custom', 'search', 'endpoint', 'schema', 'diagram', 'relationships', 'domains', 'export', 'exit'];
+            const suggestions = availableCommands.filter(cmd => 
+              cmd.includes(command.toLowerCase()) || command.toLowerCase().includes(cmd)
+            );
+            if (suggestions.length > 0) {
+              console.log(`💡 Did you mean: ${suggestions.join(', ')}?`);
+            }
         }
       } catch (error) {
         console.error('❌ Error:', (error as Error).message);

@@ -81,7 +81,7 @@ class EdFiMCPServer {
       {
         name: "ed-fi-sdk",
         version: "0.1.0",
-        instructions: "This MCP server provides tools for working with Ed-Fi Data Standard APIs and schemas. Use the available tools to explore endpoints, schemas, and generate entity relationship diagrams. Additionally, three helpful prompt templates are available: 'ed-fi-auth-discovery-guide' for OAuth 2.0 setup, 'ed-fi-api-quickstart' for common operations, and 'ed-fi-data-validation' for data validation strategies. Start by setting a data standard version using set_data_standard_version."
+        instructions: "This MCP server provides tools for working with Ed-Fi Data Standard APIs and schemas. Use the available tools to explore endpoints, schemas, and generate entity relationship diagrams. Four helpful prompt templates are available: 'ed-fi-help-and-usage' for comprehensive help and troubleshooting, 'ed-fi-auth-discovery-guide' for OAuth 2.0 setup, 'ed-fi-api-quickstart' for common operations, and 'ed-fi-data-validation' for data validation strategies. Start by setting a data standard version using set_data_standard_version."
       },
       {
         capabilities: {
@@ -393,6 +393,10 @@ class EdFiMCPServer {
       return {
         prompts: [
           {
+            name: "ed-fi-help-and-usage",
+            description: "Comprehensive help and usage guidance for the Ed-Fi SDK MCP Server, including commands, examples, troubleshooting, and getting started"
+          },
+          {
             name: "ed-fi-auth-discovery-guide",
             description: "A comprehensive guide on how to authenticate with Ed-Fi APIs, including OAuth 2.0 setup and best practices for using the Discovery API"
           },
@@ -410,6 +414,27 @@ class EdFiMCPServer {
 
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       switch (request.params.name) {
+        case "ed-fi-help-and-usage":
+          return {
+            description: "Ed-Fi SDK MCP Server Help and Usage Guide",
+            messages: [
+              {
+                role: "user",
+                content: {
+                  type: "text",
+                  text: "I need help understanding how to use the Ed-Fi SDK MCP Server. Can you provide guidance on commands, examples, and troubleshooting?"
+                }
+              },
+              {
+                role: "assistant",
+                content: {
+                  type: "text",
+                  text: this.getHelpAndUsageGuideContent()
+                }
+              }
+            ]
+          };
+
         case "ed-fi-auth-discovery-guide":
           return {
             description: "Ed-Fi API Authentication and Discovery Guide",
@@ -480,6 +505,193 @@ class EdFiMCPServer {
           );
       }
     });
+  }
+
+  private getHelpAndUsageGuideContent(): string {
+    return `# Ed-Fi SDK MCP Server Help and Usage Guide
+
+## Overview
+The Ed-Fi SDK MCP Server provides comprehensive tools for working with Ed-Fi Data Standard APIs and schemas. This guide covers all available commands, common use cases, troubleshooting, and getting started information.
+
+## Version Information
+- **CLI Tool Version**: 0.1.0
+- **MCP Server**: ed-fi-sdk v0.1.0
+- **Supported Ed-Fi Data Standard Versions**: 4.0, 5.0, 5.1, 5.2
+
+## Getting Started
+
+### 1. Using the CLI Interface
+Run the CLI to explore Ed-Fi APIs interactively:
+\`\`\`bash
+npm run cli
+\`\`\`
+
+### 2. Using as MCP Server
+The server provides tools that can be called by MCP clients to interact with Ed-Fi APIs programmatically.
+
+## Available Commands (CLI)
+
+### Basic Commands
+- **\`help\`** - Show all available commands and documentation links
+- **\`info\`** - Display version and build information  
+- **\`exit\`/\`quit\`** - Exit the CLI
+
+### Version Management
+- **\`version <4.0|5.0|5.1|5.2>\`** - Set Ed-Fi Data Standard version
+- **\`versions\`** - List all available versions
+- **\`custom <url> <name>\`** - Set custom OpenAPI specification URL
+
+### Search and Discovery
+- **\`search endpoints <query>\`** - Search for API endpoints
+- **\`search schemas <query>\`** - Search for data schemas
+- **\`endpoint <path> [method]\`** - Get detailed endpoint information
+- **\`schema <name>\`** - Get detailed schema information
+
+### Domain Analysis
+- **\`domains\`** - List all domains with entity counts
+- **\`domains <domain>\`** - Get entities for a specific domain
+- **\`relationships [entity]\`** - List entity relationships
+
+### Diagram Generation
+- **\`diagram [format] [domains...]\`** - Generate entity diagram
+  - Formats: \`mermaid\`, \`plantuml\`, \`graphviz\`
+  - Example: \`diagram mermaid Student Staff\`
+- **\`export <format> [filename]\`** - Export diagram to file
+
+## Available Tools (MCP Server)
+
+### Core Tools
+- **\`set_data_standard_version\`** - Set the Ed-Fi Data Standard version
+- **\`set_custom_data_standard_url\`** - Use custom OpenAPI specification
+- **\`list_available_versions\`** - List all available versions
+
+### Search Tools
+- **\`search_endpoints\`** - Search for API endpoints
+- **\`search_schemas\`** - Search for data models/schemas
+- **\`get_endpoint_details\`** - Get detailed endpoint information
+- **\`get_schema_details\`** - Get detailed schema information
+
+### Analysis Tools
+- **\`generate_entity_diagram\`** - Generate entity relationship diagrams
+- **\`list_entity_relationships\`** - List relationships between entities
+- **\`get_entities_by_domain\`** - Get entities grouped by domain
+- **\`export_diagram_as_text\`** - Export diagrams as text
+
+## Common Use Cases
+
+### 1. Exploring a New Ed-Fi Implementation
+\`\`\`
+version 5.2
+domains
+search endpoints student
+search schemas Student
+\`\`\`
+
+### 2. Understanding Data Relationships
+\`\`\`
+relationships Student
+domains Student
+diagram mermaid Student
+\`\`\`
+
+### 3. API Endpoint Analysis
+\`\`\`
+search endpoints school
+endpoint /ed-fi/schools GET
+\`\`\`
+
+### 4. Generating Documentation
+\`\`\`
+diagram mermaid Student Staff Assessment
+export mermaid ed-fi-entities.md
+\`\`\`
+
+## Context-Sensitive Help
+
+### When You Get Errors
+- **"No Data Standard version loaded"** → Use \`version <version>\` first
+- **"Endpoint not found"** → Use \`search endpoints <query>\` to find available endpoints
+- **"Schema not found"** → Use \`search schemas <query>\` to find available schemas
+- **"Unknown command"** → Type \`help\` to see all available commands
+
+### Usage Examples
+- **Wrong**: \`search student\` → **Correct**: \`search endpoints student\`
+- **Wrong**: \`endpoint students\` → **Correct**: \`endpoint /ed-fi/students\`
+- **Wrong**: \`diagram\` → **Better**: \`diagram mermaid Student\`
+
+## Troubleshooting Guide
+
+### Common Issues
+
+#### 1. Network Connection Problems
+**Problem**: "getaddrinfo ENOTFOUND api.ed-fi.org"
+**Solution**: 
+- Check internet connection
+- Verify firewall/proxy settings
+- Try using a custom URL if accessing a local Ed-Fi API
+
+#### 2. No Data Available
+**Problem**: Commands return "No Data Standard version loaded"
+**Solution**: 
+- Run \`version 5.2\` (or your desired version) first
+- Wait for the OpenAPI specification to download
+- Check for network connectivity
+
+#### 3. Search Returns No Results
+**Problem**: Search commands return no results
+**Solution**:
+- Try broader search terms (e.g., "student" instead of "studentschoolassociation")
+- Use \`versions\` to ensure correct version is loaded
+- Check spelling and use partial matches
+
+#### 4. Diagram Generation Issues
+**Problem**: Diagrams are too large or complex
+**Solution**:
+- Filter by specific domains: \`diagram mermaid Student\`
+- Use smaller entity limits in MCP tools
+- Focus on specific relationships: \`relationships Student\`
+
+### Performance Tips
+- API specifications are cached for 1 hour
+- Use domain filtering for faster diagram generation
+- Search with specific terms to get relevant results quickly
+
+## Additional Resources
+
+### Documentation Links
+- **CLI Usage Guide**: CLI-USAGE.md in the project root
+- **Ed-Fi Documentation**: https://docs.ed-fi.org/
+- **Ed-Fi API Client Guide**: https://docs.ed-fi.org/reference/ods-api/
+- **GitHub Repository**: https://github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP
+
+### Helpful Prompts
+Use these MCP prompts for specific guidance:
+- **\`ed-fi-auth-discovery-guide\`** - OAuth 2.0 setup and authentication
+- **\`ed-fi-api-quickstart\`** - Common API operations and endpoints
+- **\`ed-fi-data-validation\`** - Data validation and error handling
+
+### Support
+- **Report Issues**: https://github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP/issues
+- **Documentation Questions**: Check the Ed-Fi community forums
+- **API Questions**: Refer to your Ed-Fi implementation documentation
+
+## Quick Reference
+
+### Most Used Commands
+1. \`version 5.2\` - Load the latest Ed-Fi Data Standard
+2. \`help\` - Show available commands
+3. \`search endpoints <term>\` - Find relevant API endpoints
+4. \`domains\` - Explore available data domains
+5. \`info\` - Check current status and version
+
+### Best Practices
+- Always set a version first: \`version 5.2\`
+- Use specific search terms for better results
+- Generate focused diagrams by domain
+- Export diagrams for documentation
+- Read CLI-USAGE.md for detailed examples
+
+This comprehensive guide should help you effectively use the Ed-Fi SDK MCP Server for exploring and working with Ed-Fi Data Standard APIs.`;
   }
 
   private getAuthenticationGuideContent(): string {
