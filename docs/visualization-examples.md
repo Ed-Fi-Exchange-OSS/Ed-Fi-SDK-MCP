@@ -5,6 +5,7 @@ This document provides examples of the schema visualization capabilities added t
 ## Example 1: Basic Entity Relationship Diagram
 
 **Command:**
+
 ```json
 {
   "tool": "generate_entity_diagram",
@@ -16,6 +17,7 @@ This document provides examples of the schema visualization capabilities added t
 ```
 
 **Generated Mermaid Diagram:**
+
 ```mermaid
 erDiagram
     edfi_student {
@@ -62,6 +64,7 @@ erDiagram
 ## Example 2: Domain-Filtered Diagram
 
 **Command:**
+
 ```json
 {
   "tool": "generate_entity_diagram",
@@ -74,6 +77,7 @@ erDiagram
 ```
 
 **Generated PlantUML Diagram:**
+
 ```plantuml
 @startuml
 !theme plain
@@ -112,6 +116,7 @@ entity "edfi_assessment" {
 ## Example 3: Entity Relationships Analysis
 
 **Command:**
+
 ```json
 {
   "tool": "list_entity_relationships",
@@ -122,6 +127,7 @@ entity "edfi_assessment" {
 ```
 
 **Output:**
+
 ```
 # Entity Relationships for edfi_student
 
@@ -143,6 +149,7 @@ Found 2 relationship(s):
 ## Example 4: Domain Organization
 
 **Command:**
+
 ```json
 {
   "tool": "get_entities_by_domain",
@@ -151,7 +158,8 @@ Found 2 relationship(s):
 ```
 
 **Output:**
-```
+
+```markdown
 # Entities by Domain
 
 ## Student (3 entities)
@@ -183,6 +191,7 @@ Use get_entities_by_domain with a specific domain name to see all entities in th
 ## Example 5: Graphviz Export
 
 **Command:**
+
 ```json
 {
   "tool": "export_diagram_as_text",
@@ -195,6 +204,7 @@ Use get_entities_by_domain with a specific domain name to see all entities in th
 ```
 
 **Generated Graphviz Diagram:**
+
 ```dot
 digraph EdFiEntities {
   rankdir=TB;
@@ -222,18 +232,21 @@ The schema visualization tools provide several key benefits for Ed-Fi data archi
 ## Supported Viewers
 
 ### Mermaid Diagrams
+
 - GitHub/GitLab (native rendering in markdown)
 - [Mermaid Live Editor](https://mermaid.live/)
 - VS Code with Mermaid extension
 - Documentation platforms (GitBook, Notion, etc.)
 
 ### PlantUML Diagrams  
+
 - [PlantUML Online Server](http://www.plantuml.com/plantuml/)
 - IDE plugins (IntelliJ IDEA, VS Code, Eclipse)
 - Command line tools (`plantuml`)
 - Documentation generators
 
 ### Graphviz Diagrams
+
 - [Graphviz Online](https://dreampuf.github.io/GraphvizOnline/)
 - Local `dot` command (`dot -Tpng diagram.dot -o diagram.png`)
 - Desktop applications (yEd, Gephi)

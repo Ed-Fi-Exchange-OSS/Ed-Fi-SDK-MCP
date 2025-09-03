@@ -8,6 +8,9 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
+    "cli": "npm run build && node dist/cli.js",
+    "cli:dev": "tsx src/cli.ts",
+    "cli:demo": "npm run build && node dist/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -19,7 +22,8 @@
   "author": "",
   "license": "Apache-2.0",
   "bin": {
-    "ed-fi-sdk-mcp": "dist/index.js"
+    "ed-fi-sdk-mcp": "dist/index.js",
+    "ed-fi-cli": "src/cli-direct.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.1",

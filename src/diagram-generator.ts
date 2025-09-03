@@ -2,6 +2,13 @@
  * Diagram generator for Ed-Fi Data Standard entity relationships
  */
 
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { getDomainData } from './domains/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 interface EntityProperty {
   name: string;
   type: string;
@@ -331,33 +338,55 @@ export class DiagramGenerator {
   /**
    * Get entities grouped by domain/category
    */
-  getEntitiesByDomain(): Record<string, string[]> {
-    const domains: Record<string, string[]> = {
-      'Student': [],
-      'School': [],
-      'Staff': [],
-      'Assessment': [],
-      'Course': [],
-      'Grade': [],
-      'Attendance': [],
-      'Other': []
-    };
+  getEntitiesByDomain(version: string): Record<string, string[]> {
+    // Get domain data for the specified version
+    const domainData = getDomainData(version);
 
-    for (const entityName of this.entities.keys()) {
-      const name = entityName.toLowerCase();
-      let categorized = false;
+    // Extract all entities from the domain data and group them by domain
+    const domains: Record<string, string[]> = {};
 
-      for (const [domain, entities] of Object.entries(domains)) {
-        if (domain !== 'Other' && name.includes(domain.toLowerCase())) {
-          entities.push(entityName);
-          categorized = true;
-          break;
+    for (const domainObj of domainData) {
+      for (const [domainName, domainInfo] of Object.entries(domainObj)) {
+        // Initialize domain if not exists
+        const lower = domainName.toLocaleLowerCase();
+        if (!domains[lower]) {
+          domains[lower] = [];
+        }
+
+        // Add entities from this domain
+        if (domainInfo.entities && Array.isArray(domainInfo.entities)) {
+          for (const entity of domainInfo.entities) {
+            // Only add entities that actually exist in our analyzed entities
+            if (this.entities.has(entity) && !domains[lower].includes(entity)) {
+              domains[lower].push(entity);
+            }
+          }
+        }
+
+        // Add associations from this domain (they are also entities)
+        if (domainInfo.associations && Array.isArray(domainInfo.associations)) {
+          for (const association of domainInfo.associations) {
+            // Only add associations that actually exist in our analyzed entities
+            if (this.entities.has(association) && !domains[lower].includes(association)) {
+              domains[lower].push(association);
+            }
+          }
         }
       }
+    }
 
-      if (!categorized) {
-        domains.Other.push(entityName);
-      }
+    // Add any remaining entities that weren't categorized to "Other"
+    const categorizedEntities = new Set<string>();
+    for (const entities of Object.values(domains)) {
+      entities.forEach(entity => categorizedEntities.add(entity));
+    }
+
+    const uncategorizedEntities = Array.from(this.entities.keys()).filter(
+      entity => !categorizedEntities.has(entity)
+    );
+
+    if (uncategorizedEntities.length > 0) {
+      domains['other'] = uncategorizedEntities;
     }
 
     // Remove empty domains
@@ -373,8 +402,8 @@ export class DiagramGenerator {
   /**
    * Get summary statistics
    */
-  getStats(): { entityCount: number; relationshipCount: number; domains: Record<string, number> } {
-    const domains = this.getEntitiesByDomain();
+  getStats(version: string): { entityCount: number; relationshipCount: number; domains: Record<string, number> } {
+    const domains = this.getEntitiesByDomain(version);
     const domainCounts: Record<string, number> = {};
     
     for (const [domain, entities] of Object.entries(domains)) {
