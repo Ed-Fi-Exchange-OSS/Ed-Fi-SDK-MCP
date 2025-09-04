@@ -2,6 +2,8 @@ name: On Pull Request
 on:
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
 
 permissions: read-all
 
