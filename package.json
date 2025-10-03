@@ -1,7 +1,13 @@
 {
   "name": "ed-fi-sdk-mcp",
   "version": "0.1.0",
-  "description": "An MCP Server for the Ed-Fi Data Standard",
+  "description": "Ed-Fi Software Development Kit MCP Server",
+  "homepage": "https://github.com/Ed-Fi-Alliance-OSS/Ed-Fi-SDK-MCP",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ed-Fi-Alliance-OSS/Ed-Fi-SDK-MCP.git"
+  },
+  "author": "Ed-Fi Alliance, LLC",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -19,7 +25,6 @@
     "api",
     "data-standard"
   ],
-  "author": "",
   "license": "Apache-2.0",
   "bin": {
     "ed-fi-sdk-mcp": "dist/index.js",
@@ -33,5 +38,11 @@
     "@types/node": "^24.2.0",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2"
-  }
+  },
+  "files": [
+    "dist",
+    "CLI-USAGE.md",
+    "README.md",
+    "LICENSE"
+  ]
 }
