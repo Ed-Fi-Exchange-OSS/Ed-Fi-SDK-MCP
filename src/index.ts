@@ -15,6 +15,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { DiagramGenerator } from "./diagram-generator.js";
+import { SearchIndex, type OpenAPISpec as SearchOpenAPISpec } from "./search-index.js";
 
 interface DataStandardVersion {
   version: string;
@@ -46,6 +47,7 @@ class EdFiMCPServer {
   private config: ServerConfig;
   private cacheDir: string;
   private diagramGenerator: DiagramGenerator;
+  private searchIndex: SearchIndex | null = null;
 
   private readonly dataStandardVersions: DataStandardVersion[] = [
     {
@@ -1369,6 +1371,18 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
 
       // Analyze the spec for entity relationships
       this.diagramGenerator.analyzeOpenAPISpec(spec);
+
+      // Build the FTS search index from the freshly loaded spec
+      try {
+        this.searchIndex?.close();
+        this.searchIndex = new SearchIndex(this.cacheDir, url);
+        if (!this.searchIndex.isReady()) {
+          this.searchIndex.buildFromSpec(spec as SearchOpenAPISpec);
+        }
+      } catch {
+        // Non-fatal: fall back to legacy substring search when SQLite is unavailable
+        this.searchIndex = null;
+      }
       
       // Only generate stats if we have a version number (domain info is available)
       let stats = null;
@@ -1424,6 +1438,48 @@ You can now:
       );
     }
 
+    // ── FTS5 path (preferred) ────────────────────────────────────────────
+    if (this.searchIndex?.isReady()) {
+      const hits = this.searchIndex.searchEndpoints(query, 20);
+
+      if (hits.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No endpoints found matching "${query}". Try a different search term or use list_available_versions to see what's available.`,
+            },
+          ],
+        };
+      }
+
+      // Group by path so multiple HTTP methods collapse into one entry
+      const byPath = new Map<string, { methods: string[]; summary: string }>();
+      for (const hit of hits) {
+        const existing = byPath.get(hit.path);
+        if (existing) {
+          existing.methods.push(hit.method.toUpperCase());
+        } else {
+          byPath.set(hit.path, {
+            methods: [hit.method.toUpperCase()],
+            summary: hit.summary || "No summary available",
+          });
+        }
+      }
+
+      const entries = Array.from(byPath.entries());
+      const resultText = `Found ${entries.length} endpoint(s) matching "${query}":
+
+${entries
+  .map(([p, info]) => `• ${p} [${info.methods.join(", ")}]\n  ${info.summary}`)
+  .join("\n\n")}
+
+Use get_endpoint_details with a specific path to get more information.`;
+
+      return { content: [{ type: "text", text: resultText }] };
+    }
+
+    // ── Legacy substring-match fallback ─────────────────────────────────
     const searchTerm = query.toLowerCase();
     const matchingEndpoints: Array<{ path: string; methods: string[]; summary?: string }> = [];
 
@@ -1584,6 +1640,33 @@ Use get_endpoint_details with a specific path to get more information.`;
       );
     }
 
+    // ── FTS5 path (preferred) ────────────────────────────────────────────
+    if (this.searchIndex?.isReady()) {
+      const hits = this.searchIndex.searchSchemas(query, 20);
+
+      if (hits.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No schemas found matching "${query}". Try a different search term.`,
+            },
+          ],
+        };
+      }
+
+      const resultText = `Found ${hits.length} schema(s) matching "${query}":
+
+${hits
+  .map((s) => `• **${s.name}**\n  ${s.description || s.title || "No description available"}`)
+  .join("\n\n")}
+
+Use get_schema_details with a specific schema name to get more information.`;
+
+      return { content: [{ type: "text", text: resultText }] };
+    }
+
+    // ── Legacy substring-match fallback ─────────────────────────────────
     const searchTerm = query.toLowerCase();
     const matchingSchemas: Array<{ name: string; description?: string }> = [];
 
