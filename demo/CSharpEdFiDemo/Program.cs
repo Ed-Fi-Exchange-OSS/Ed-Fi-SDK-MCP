@@ -38,13 +38,14 @@ class Program
             // Step 2: Create an academic subject descriptor
             Console.WriteLine("2. Creating an academic subject descriptor...");
 
-            var academicSubjectDescriptor = new
+            var academicSubjectDescriptor = CreateAcademicSubjectDescriptor();
+
+            var current = academicSubjectDescriptor;
+            for (int i = 0; i < 25000; i++)
             {
-                codeValue = "MATHSCIENCE",
-                description = "Mathematics or Science",
-                @namespace = "uri://ed-fi.org/AcademicSubjectDescriptor",
-                shortDescription = "Math or Science",
-            };
+                current.self = CreateAcademicSubjectDescriptor();
+                current = current.self;
+            }
 
             var descriptorResponse = await CreateAcademicSubjectDescriptorAsync(
                 apiBaseUrl,
@@ -73,9 +74,29 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"✗ Error: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
+            // Console.WriteLine(ex.StackTrace);
             Environment.Exit(1);
         }
+
+        static AsDescriptor CreateAcademicSubjectDescriptor()
+        {
+            return new AsDescriptor
+            {
+                codeValue = "M",
+                @namespace = "uri://ed-fi.org/AcademicSubjectDescriptor",
+                shortDescription = "M",
+                self = null,
+            };
+        }
+    }
+
+    public class AsDescriptor
+    {
+        public string codeValue { get; set; }
+        public string description { get; set; }
+        public string @namespace { get; set; }
+        public string shortDescription { get; set; }
+        public AsDescriptor? self { get; set; }
     }
 
     static async Task<string> AuthenticateAsync(
@@ -127,12 +148,86 @@ class Program
         var url = $"{apiBaseUrl}/data/v3/ed-fi/academicSubjectDescriptors";
         Console.WriteLine($"POST {url}");
 
-        var content = new StringContent(
-            JsonSerializer.Serialize(descriptorPayload),
-            Encoding.UTF8,
-            "application/json"
-        );
+        string jsonString = BuildDescriptorJson((AsDescriptor)descriptorPayload);
+        var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
         return await client.PostAsync(url, content);
+    }
+
+    static string BuildDescriptorJson(AsDescriptor descriptor)
+    {
+        // Traverse to the end of the linked list to get depth
+        var current = descriptor;
+        int depth = 1;
+        while (current.self != null)
+        {
+            current = current.self;
+            depth++;
+        }
+
+        // Build JSON iteratively from the deepest level
+        var sb = new StringBuilder();
+        sb.Append('{');
+        sb.Append($"\"codeValue\":\"{EscapeJson(current.codeValue)}\",");
+        sb.Append($"\"description\":\"{EscapeJson(current.description)}\",");
+        sb.Append($"\"namespace\":\"{EscapeJson(current.@namespace)}\",");
+        sb.Append($"\"shortDescription\":\"{EscapeJson(current.shortDescription)}\"");
+        sb.Append('}');
+
+        // Walk backward through the chain, wrapping each level
+        var nodes = new List<AsDescriptor>();
+        current = descriptor;
+        while (current != null)
+        {
+            nodes.Add(current);
+            current = current.self;
+        }
+
+        // Wrap from second-to-last to first
+        for (int i = nodes.Count - 2; i >= 0; i--)
+        {
+            var wrapper = new StringBuilder();
+            wrapper.Append('{');
+            wrapper.Append($"\"codeValue\":\"{EscapeJson(nodes[i].codeValue)}\",");
+            wrapper.Append($"\"description\":\"{EscapeJson(nodes[i].description)}\",");
+            wrapper.Append($"\"namespace\":\"{EscapeJson(nodes[i].@namespace)}\",");
+            wrapper.Append($"\"shortDescription\":\"{EscapeJson(nodes[i].shortDescription)}\",");
+            wrapper.Append("\"self\":");
+            wrapper.Append(sb.ToString());
+            wrapper.Append('}');
+            sb = wrapper;
+        }
+
+        return sb.ToString();
+    }
+
+    static void BuildDescriptorJsonRecursive(AsDescriptor descriptor, StringBuilder sb)
+    {
+        sb.Append('{');
+        sb.Append($"\"codeValue\":\"{EscapeJson(descriptor.codeValue)}\",");
+        sb.Append($"\"description\":\"{EscapeJson(descriptor.description)}\",");
+        sb.Append($"\"namespace\":\"{EscapeJson(descriptor.@namespace)}\",");
+        sb.Append($"\"shortDescription\":\"{EscapeJson(descriptor.shortDescription)}\"");
+
+        if (descriptor.self != null)
+        {
+            sb.Append(",\"self\":");
+            BuildDescriptorJsonRecursive(descriptor.self, sb);
+        }
+
+        sb.Append('}');
+    }
+
+    static string EscapeJson(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t");
     }
 }
