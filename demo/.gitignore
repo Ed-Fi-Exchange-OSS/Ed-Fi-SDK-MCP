@@ -1,0 +1,23 @@
+# Build artifacts
+bin/
+obj/
+dist/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sensitive files (never commit these!)
+appsettings.Production.json
+appsettings.*.json
+
+# Dependencies
+.nuget/
+packages/

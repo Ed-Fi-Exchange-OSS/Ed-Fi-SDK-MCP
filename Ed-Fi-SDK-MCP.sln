@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{A39C23D2-F2C0-258D-165A-CF1E7FEE6E7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharpEdFiDemo", "demo\CSharpEdFiDemo\CSharpEdFiDemo.csproj", "{BC39DAA8-9270-D119-AEBF-41CE50CD9176}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BC39DAA8-9270-D119-AEBF-41CE50CD9176}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC39DAA8-9270-D119-AEBF-41CE50CD9176}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC39DAA8-9270-D119-AEBF-41CE50CD9176}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC39DAA8-9270-D119-AEBF-41CE50CD9176}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BC39DAA8-9270-D119-AEBF-41CE50CD9176} = {A39C23D2-F2C0-258D-165A-CF1E7FEE6E7B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8B51B20D-E5FF-49B1-A9C9-0FAB13B3F115}
+	EndGlobalSection
+EndGlobal
