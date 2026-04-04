@@ -1,8 +1,11 @@
-# Ed-Fi Software Development Kit MCP Server
+# Ed-Fi Software Development Kit for AI Assistants
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Ed-Fi-Exchange-OSS/Ed-Fi-SDK-MCP)
 
-An MCP Server that helps developers build client applications that interact with Ed-Fi APIs through AI assistants like GitHub Copilot, Claude Code, Cursor, etc.
+Tools for use with AI Assistants when developing client applications that interact with Ed-Fi APIs.
+
+> [!NOTE]
+> At this time, there is a single tool available: an MCP server. Given that is about information discovery, but not data access, MCP might not be the right choice. We will also explore use of CLI tools and/or Skills for similar purposes.
 
 ## Features
 
