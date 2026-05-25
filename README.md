@@ -309,6 +309,39 @@ If you're working with a custom Ed-Fi implementation, you can load specification
 
 2. Continue with normal workflow (search_endpoints, etc.)
 
+### Running against saved swagger.json files (no ODS/API required)
+
+When the Data Standard / API combination you need isn't hosted on `api.ed-fi.org` — for example **DS 4.0 served by API v7.3.2** — you can capture the swagger.json files from a one-time local install and share them. Others can then point the MCP server at the saved files without standing up their own ODS/API instance.
+
+1. Place both swagger files in a directory:
+
+   ```text
+   swagger/resources-swagger_ODS7.3.2_DS4.0.0.json
+   swagger/descriptors-swagger_ODS7.3.2_DS4.0.0.json
+   ```
+
+2. Start a static file server in that directory and leave the terminal open while using the MCP server:
+
+   ```bash
+   cd swagger
+   npx serve -p 8000
+   ```
+
+   Verify in a browser: `http://localhost:8000/resources-swagger_ODS7.3.2_DS4.0.0.json` should return JSON.
+
+3. In an MCP-aware chat (Agent mode), call:
+
+   ```text
+   set_custom_data_standard_url
+     url:  http://localhost:8000/resources-swagger_ODS7.3.2_DS4.0.0.json
+     name: Ed-Fi 7.3.2 / DS 4.0 (from JSON file)
+   ```
+
+4. Use the normal tools — `search_endpoints`, `get_schema_details edFi_student`, `generate_entity_diagram`, etc.
+
+> [!NOTE]
+> The MCP server fetches the spec over HTTP, so a `file://` path or raw filesystem path will not work — the static server step is required. To switch from resources to descriptors, call `set_custom_data_standard_url` again with the other file's URL; the previous spec is replaced.
+
 ### Visualization Workflow Example
 
 For data architects working with Ed-Fi schemas:
