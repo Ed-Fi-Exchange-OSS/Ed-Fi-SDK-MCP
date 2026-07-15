@@ -9,8 +9,11 @@ dist/
 .env.production.local
 coverage/
 .nyc_output/
-.vscode/
+
 .idea/
 *.swp
 *.swo
 *~
+
+__pycache__/
+*.egg-info/
