@@ -10,10 +10,39 @@ only implements the MCP server.
 
 ## Install
 
+`pip install` never creates or manages a virtual environment for you — it
+installs into whatever Python environment is currently active. Create and
+activate one first so this package's dependencies (`mcp`, `httpx`) stay
+isolated from your global Python install:
+
 ```bash
 cd src-py
+python -m venv .venv
+```
+
+Activate it (pick the line for your shell):
+
+```bash
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# Windows cmd.exe
+.venv\Scripts\activate.bat
+
+# macOS / Linux (bash/zsh)
+source .venv/bin/activate
+```
+
+Then install the package into the activated environment:
+
+```bash
 pip install -e .
 ```
+
+Run `deactivate` to leave the virtual environment when you're done. You'll
+need to reactivate it (the `Activate.ps1`/`source .venv/bin/activate` step
+above) in each new terminal session before running the server or the
+console script below.
 
 ## Run
 
