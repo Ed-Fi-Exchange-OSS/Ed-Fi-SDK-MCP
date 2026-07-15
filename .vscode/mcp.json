@@ -1,0 +1,21 @@
+{
+	"servers": {
+		"ed-fi-sdk-js": {
+			"type": "stdio",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			]
+		},
+		"ed-fi-sdk-py": {
+			"type": "stdio",
+			"command": "python",
+			"args": [
+				"-m",
+				"ed_fi_mcp"
+			]
+		}
+	},
+	"inputs": []
+}
