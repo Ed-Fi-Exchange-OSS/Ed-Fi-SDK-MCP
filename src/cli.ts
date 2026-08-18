@@ -365,7 +365,7 @@ class EdFiCLI {
       try {
         this.searchIndex?.close();
         this.searchIndex = new SearchIndex(this.cacheDir, versionData.url);
-        if (!this.searchIndex.isReady()) {
+        if (!fromCache || !this.searchIndex.isReady()) {
           this.searchIndex.buildFromSpec(spec as SearchOpenAPISpec);
         }
       } catch {
