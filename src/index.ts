@@ -1376,7 +1376,7 @@ Use set_custom_data_standard_url to load a custom OpenAPI specification.`;
       try {
         this.searchIndex?.close();
         this.searchIndex = new SearchIndex(this.cacheDir, url);
-        if (!this.searchIndex.isReady()) {
+        if (!fromCache || !this.searchIndex.isReady()) {
           this.searchIndex.buildFromSpec(spec as SearchOpenAPISpec);
         }
       } catch {
