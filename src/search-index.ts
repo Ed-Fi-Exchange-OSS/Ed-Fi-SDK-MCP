@@ -1,7 +1,28 @@
-import Database from "better-sqlite3";
 import * as path from "path";
 import * as crypto from "crypto";
 import * as fs from "fs";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+interface SQLiteStatement<Result = unknown> {
+  get(...params: unknown[]): Result;
+  all(...params: unknown[]): Result[];
+  run(...params: unknown[]): unknown;
+}
+
+interface SQLiteDatabase {
+  pragma(source: string): unknown;
+  exec(source: string): unknown;
+  prepare<Result = unknown>(source: string): SQLiteStatement<Result>;
+  transaction(fn: () => void): () => void;
+  close(): void;
+}
+
+type SQLiteDatabaseConstructor = {
+  new (filename: string): SQLiteDatabase;
+  default?: SQLiteDatabaseConstructor;
+};
 
 export interface OpenAPISpec {
   paths?: Record<string, Record<string, unknown>>;
@@ -36,17 +57,18 @@ export interface SchemaSearchResult {
  *   - Indexed property names for both endpoints and schemas
  */
 export class SearchIndex {
-  private db: Database.Database;
+  private db: SQLiteDatabase;
   private ready = false;
 
   constructor(cacheDir: string, specUrl: string) {
+    const BetterSqlite3 = SearchIndex.loadDatabase();
     const hash = crypto
       .createHash("sha256")
       .update(specUrl)
       .digest("hex")
       .substring(0, 12);
     const dbPath = path.join(cacheDir, `search-index-${hash}.db`);
-    this.db = new Database(dbPath);
+    this.db = new BetterSqlite3(dbPath);
     this.db.pragma("journal_mode = WAL");
     this.initializeSchema();
     // Mark as ready only when there is already indexed data
@@ -56,6 +78,11 @@ export class SearchIndex {
       )
       .get() as { endpointsCnt: number; schemasCnt: number };
     this.ready = row.endpointsCnt > 0 || row.schemasCnt > 0;
+  }
+
+  private static loadDatabase(): SQLiteDatabaseConstructor {
+    const databaseModule = require("better-sqlite3") as SQLiteDatabaseConstructor;
+    return databaseModule.default ?? databaseModule;
   }
 
   private initializeSchema(): void {
