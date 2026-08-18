@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "ed-fi-student-loader"
+version = "0.1.0"
+description = "A Python script to load student data into Ed-Fi ODS/API"
+authors = ["Ed-Fi Developer <developer@ed-fi.org>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
