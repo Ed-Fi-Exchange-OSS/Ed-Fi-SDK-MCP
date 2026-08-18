@@ -229,10 +229,10 @@ export class SearchIndex {
       .prepare(
         `SELECT path, method, summary, description, tags
          FROM endpoints_fts
-         WHERE lower(path) LIKE ? OR lower(summary) LIKE ? OR lower(tags) LIKE ?
+         WHERE lower(path) LIKE ? OR lower(method) LIKE ? OR lower(summary) LIKE ? OR lower(description) LIKE ? OR lower(tags) LIKE ?
          LIMIT ?`
       )
-      .all(term, term, term, limit) as EndpointSearchResult[];
+      .all(term, term, term, term, term, limit) as EndpointSearchResult[];
   }
 
   private fallbackSearchSchemas(
