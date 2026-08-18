@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { DiagramGenerator } from './diagram-generator.js';
+import { SearchIndex, type OpenAPISpec as SearchOpenAPISpec } from './search-index.js';
 
 interface DataStandardVersion {
   version: string;
@@ -59,6 +60,7 @@ class EdFiCLI {
   private currentVersionNumber: string | null = null;
   private cacheDir: string;
   private diagramGenerator: DiagramGenerator;
+  private searchIndex: SearchIndex | null = null;
   private rl: Interface;
 
   private readonly dataStandardVersions: DataStandardVersion[] = [
@@ -359,6 +361,17 @@ class EdFiCLI {
       this.currentVersion = versionData.url;
       this.currentVersionNumber = version;
 
+      // Build FTS search index
+      try {
+        this.searchIndex?.close();
+        this.searchIndex = new SearchIndex(this.cacheDir, versionData.url);
+        if (!fromCache || !this.searchIndex.isReady()) {
+          this.searchIndex.buildFromSpec(spec as SearchOpenAPISpec);
+        }
+      } catch {
+        this.searchIndex = null;
+      }
+
       // Generate analytics
       const endpointCount = Object.keys(spec.paths || {}).length;
       const schemaCount = Object.keys(spec.components?.schemas || {}).length;
@@ -414,6 +427,17 @@ class EdFiCLI {
       this.currentVersion = url;
       this.currentVersionNumber = name;
 
+      // Build FTS search index
+      try {
+        this.searchIndex?.close();
+        this.searchIndex = new SearchIndex(this.cacheDir, url);
+        if (!this.searchIndex.isReady()) {
+          this.searchIndex.buildFromSpec(spec as SearchOpenAPISpec);
+        }
+      } catch {
+        this.searchIndex = null;
+      }
+
       const endpointCount = Object.keys(spec.paths || {}).length;
       const schemaCount = Object.keys(spec.components?.schemas || {}).length;
 
@@ -439,7 +463,44 @@ class EdFiCLI {
 
     try {
       console.log(`🔍 Searching endpoints for: "${query}"...`);
-      
+
+      // ── FTS5 path (preferred) ──────────────────────────────────────────
+      if (this.searchIndex?.isReady()) {
+        const hits = this.searchIndex.searchEndpoints(query, 20);
+        if (hits.length === 0) {
+          console.log('No matching endpoints found.');
+          return;
+        }
+
+        // Group by path so multiple HTTP methods collapse into one entry
+        const byPath = new Map<string, { methods: string[]; summary: string; description: string }>();
+        for (const hit of hits) {
+          const existing = byPath.get(hit.path);
+          if (existing) {
+            existing.methods.push(hit.method.toUpperCase());
+          } else {
+            byPath.set(hit.path, {
+              methods: [hit.method.toUpperCase()],
+              summary: hit.summary || 'No summary available',
+              description: hit.description || ''
+            });
+          }
+        }
+
+        console.log(`Found ${byPath.size} matching endpoint(s):`);
+        console.log('');
+        for (const [p, info] of byPath) {
+          console.log(`${info.methods.join(', ')} ${p}`);
+          console.log(`  Summary: ${info.summary}`);
+          if (info.description) {
+            console.log(`  Description: ${info.description.substring(0, 100)}${info.description.length > 100 ? '...' : ''}`);
+          }
+          console.log('');
+        }
+        return;
+      }
+
+      // ── Legacy substring-match fallback ───────────────────────────────
       const paths = this.currentSpec.paths || {};
       const matches: EndpointMatch[] = [];
       const queryLower = query.toLowerCase();
@@ -494,7 +555,30 @@ class EdFiCLI {
 
     try {
       console.log(`🔍 Searching schemas for: "${query}"...`);
-      
+
+      // ── FTS5 path (preferred) ──────────────────────────────────────────
+      if (this.searchIndex?.isReady()) {
+        const hits = this.searchIndex.searchSchemas(query, 20);
+        if (hits.length === 0) {
+          console.log('No matching schemas found.');
+          return;
+        }
+
+        console.log(`Found ${hits.length} matching schema(s):`);
+        console.log('');
+        hits.slice(0, 10).forEach(hit => {
+          const description = hit.description || hit.title || 'No description available';
+          console.log(`📄 ${hit.name}`);
+          console.log(`  Description: ${description.substring(0, 100)}${description.length > 100 ? '...' : ''}`);
+          console.log('');
+        });
+        if (hits.length > 10) {
+          console.log(`... and ${hits.length - 10} more results. Refine your search for more specific results.`);
+        }
+        return;
+      }
+
+      // ── Legacy substring-match fallback ───────────────────────────────
       const schemas = this.currentSpec.components?.schemas || {};
       const matches: SchemaMatch[] = [];
       const queryLower = query.toLowerCase();

@@ -13,6 +13,7 @@ Tools for use with AI Assistants when developing client applications that intera
 - **Custom URL Support**: Configure alternative URLs for custom Ed-Fi Data Standard instances
 - **OpenAPI Integration**: Automatically fetches and parses OpenAPI specifications from Ed-Fi APIs
 - **Intelligent Caching**: Caches OpenAPI specs locally to reduce network requests and improve response times
+- **SQLite Search Indexing**: Creates a local SQLite full-text search database at runtime from the downloaded OpenAPI specification to improve endpoint and schema lookup quality
 - **Endpoint Discovery**: Search and explore available API endpoints
 - **Schema Exploration**: Browse and understand data models and schemas
 - **Detailed Documentation**: Get comprehensive information about endpoints and data structures
@@ -247,7 +248,8 @@ The MCP server supports the following environment variables for configuration:
   Example: `ED_FI_CUSTOM_BASE_URL=https://my-ed-fi-instance.org/v7.3`
 
 - **`ED_FI_CACHE_DIR`** (optional): Specify a custom directory for caching OpenAPI specifications. Defaults to the system temporary directory.
-  
+  The server also creates a SQLite database in this cache directory for full-text search after a specification is downloaded or loaded from cache.
+   
   Example: `ED_FI_CACHE_DIR=/home/user/.cache/ed-fi-mcp`
 
 ### Example Usage with Custom Configuration

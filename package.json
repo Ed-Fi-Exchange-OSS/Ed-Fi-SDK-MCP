@@ -35,6 +35,7 @@
     "axios": "^1.12.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.2.0",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2"
@@ -44,5 +45,8 @@
     "CLI-USAGE.md",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "optionalDependencies": {
+    "better-sqlite3": "^12.6.2"
+  }
 }
