@@ -51,9 +51,11 @@ export class SearchIndex {
     this.initializeSchema();
     // Mark as ready only when there is already indexed data
     const row = this.db
-      .prepare("SELECT COUNT(*) AS cnt FROM endpoints_fts")
-      .get() as { cnt: number };
-    this.ready = row.cnt > 0;
+      .prepare(
+        "SELECT (SELECT COUNT(*) FROM endpoints_fts) AS endpointsCnt, (SELECT COUNT(*) FROM schemas_fts) AS schemasCnt"
+      )
+      .get() as { endpointsCnt: number; schemasCnt: number };
+    this.ready = row.endpointsCnt > 0 || row.schemasCnt > 0;
   }
 
   private initializeSchema(): void {
